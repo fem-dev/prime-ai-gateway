@@ -175,11 +175,32 @@ def _():
             )
             image = result.images[0]
 
-        # Return the generated image inline in the same chat conversation.
+        # Add a separate viewer link and a native PNG download control.
         buffer = io.BytesIO()
         image.save(buffer, format="PNG")
-        encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
-        return "تصویرت آماده شد!\n\n![تصویر تولیدشده](data:image/png;base64," + encoded + ")"
+        image_bytes = buffer.getvalue()
+        encoded = base64.b64encode(image_bytes).decode("ascii")
+
+        mo.output.append(
+            mo.vstack([
+                mo.md("### تصویرت آماده شد!"),
+                mo.Html(
+                    '<a href="data:image/png;base64,' + encoded +
+                    '" target="_blank" rel="noopener noreferrer" '
+                    'style="display:inline-block;padding:10px 16px;'
+                    'border-radius:9px;background:var(--marimo-foreground);'
+                    'color:var(--marimo-background);text-decoration:none;'
+                    'font-weight:600;">نمایش تصویر در تب جدید ↗</a>'
+                ),
+                mo.download(
+                    data=image_bytes,
+                    filename="prime-ai-image.png",
+                    mimetype="image/png",
+                    label="دانلود تصویر PNG",
+                ),
+            ])
+        )
+        return "تصویرت آماده شد! برای نمایش یا دانلود، گزینه‌های پایین خروجی را انتخاب کن."
 
     def answer(messages, config):
         try:
