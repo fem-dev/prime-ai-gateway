@@ -54,6 +54,8 @@ def _():
             "qwen": None,
             "qwen_tokenizer": None,
             "image_pipe": None,
+            "image_loading": False,
+            "image_error": None,
             "lock": threading.RLock(),
         },
     )
@@ -150,21 +152,43 @@ def _():
             pass
         return {"action": "chat", "response": raw}
 
+    def ensure_image_model():
+        with state["lock"]:
+            if state["image_pipe"] is None:
+                if not torch.cuda.is_available():
+                    raise RuntimeError("برای بارگذاری مدل تصویر، GPU را در تنظیمات Molab فعال کن.")
+                from diffusers import ZImagePipeline
+                dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+                state["image_loading"] = True
+                state["image_error"] = None
+                try:
+                    state["image_pipe"] = ZImagePipeline.from_pretrained(
+                        IMAGE_ID,
+                        subfolder="diffusers",
+                        torch_dtype=dtype,
+                    ).to("cuda")
+                except Exception as exc:
+                    state["image_error"] = str(exc)
+                    raise
+                finally:
+                    state["image_loading"] = False
+            return state["image_pipe"]
+
+    def preload_image_model():
+        try:
+            ensure_image_model()
+            print("Prime AI: Z-Anime آماده است.")
+        except Exception as exc:
+            print("Prime AI: بارگذاری اولیه Z-Anime ناموفق بود:", str(exc)[-2000:])
+
     def generate_image(prompt_text):
         if not torch.cuda.is_available():
             return "برای ساخت تصویر باید GPU را در تنظیمات Molab فعال کنی."
-        from diffusers import ZImagePipeline
 
         with state["lock"]:
             unload_chat_model()
-            if state["image_pipe"] is None:
-                dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-                state["image_pipe"] = ZImagePipeline.from_pretrained(
-                    IMAGE_ID,
-                    subfolder="diffusers",
-                    torch_dtype=dtype,
-                ).to("cuda")
-            result = state["image_pipe"](
+            pipe = ensure_image_model()
+            result = pipe(
                 prompt=prompt_text,
                 width=832,
                 height=1216,
@@ -212,6 +236,10 @@ def _():
             return decision.get("response", "متوجه درخواستت نشدم.")
         except Exception as exc:
             return "خطا در اجرای Prime AI:\n\n" + str(exc)[-2500:]
+
+    # Start downloading and importing the anime model as soon as this app cell runs.
+    preload_thread = threading.Thread(target=preload_image_model, daemon=True)
+    preload_thread.start()
 
     chat = mo.ui.chat(
         answer,
