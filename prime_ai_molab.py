@@ -20,7 +20,6 @@ def _():
     if not INSTALL_MARKER.exists():
         packages = [
             "transformers>=4.51.0",
-            "bitsandbytes>=0.45.0",
             "diffusers>=0.33.0",
             "accelerate>=1.6.0",
             "safetensors>=0.5.3",
@@ -42,7 +41,7 @@ def _():
         INSTALL_MARKER.touch()
 
     import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
     # Keep loaded pipelines between reactive reruns of this notebook cell.
     state = globals().setdefault(
@@ -52,26 +51,19 @@ def _():
     )
 
     QWEN_ID = "Qwen/Qwen3-32B"
-    FLUX_ID = "black-forest-labs/FLUX.1-schnell"
+    FLUX_ID = "black-forest-labs/FLUX.1-dev"
 
     def load_qwen():
         with state["lock"]:
             if state["qwen"] is None:
                 tokenizer = AutoTokenizer.from_pretrained(QWEN_ID)
                 if not torch.cuda.is_available():
-                    raise RuntimeError("Qwen3-32B برای اجرای این نسخه به GPU سازگار با 4-bit نیاز دارد.")
+                    raise RuntimeError("برای اجرای Qwen3-32B به GPU نیاز است.")
                 compute_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-                quantization = BitsAndBytesConfig(
-                    load_in_4bit=True,
-                    bnb_4bit_quant_type="nf4",
-                    bnb_4bit_compute_dtype=compute_dtype,
-                    bnb_4bit_use_double_quant=True,
-                )
                 model = AutoModelForCausalLM.from_pretrained(
                     QWEN_ID,
                     device_map="auto",
                     torch_dtype=compute_dtype,
-                    quantization_config=quantization,
                     low_cpu_mem_usage=True,
                 )
                 state["qwen_tokenizer"] = tokenizer
@@ -116,7 +108,7 @@ def _():
         placeholder="مثلاً: یک منظره فانتزی از شهر آینده در غروب، سبک نقاشی دیجیتال",
         rows=3,
     )
-    make_image = mo.ui.button(label="ساخت تصویر با FLUX.1 Schnell", kind="primary")
+    make_image = mo.ui.button(label="ساخت تصویر با FLUX.1 Dev", kind="primary")
     image_hint = mo.md("برای تولید تصویر، GPU را از تنظیمات منابع Molab فعال کن. بار اول دانلود مدل ممکن است زمان‌بر باشد.")
 
     mo.vstack([
@@ -125,7 +117,7 @@ def _():
 ### چت و تولید تصویر با اجرای محلی مدل‌ها
 
 رابط Prime AI با سلول‌های هماهنگ Marimo اجرا می‌شود. برای چت از **Qwen3-32B (نسخه 4-bit)** و برای تصویر از
-**FLUX.1 Schnell** استفاده می‌کند. مدل‌ها در همین نشست اجرا می‌شوند؛ درخواست‌ها
+**FLUX.1 Dev** استفاده می‌کند. مدل‌ها در همین نشست اجرا می‌شوند؛ درخواست‌ها
 به API سرویس‌های واسطه ارسال نمی‌شوند.
 
 **نیازی به API Key یا توکن Hugging Face نیست.** وزن‌های عمومی مدل‌ها هنگام
@@ -166,8 +158,8 @@ def _(mo, torch, state, FLUX_ID, image_prompt, make_image):
                     prompt=prompt_text,
                     height=1024,
                     width=1024,
-                    num_inference_steps=4,
-                    guidance_scale=0.0,
+                    num_inference_steps=28,
+                    guidance_scale=3.5,
                 )
                 state["last_image"] = result.images[0]
             image_status = mo.vstack([
