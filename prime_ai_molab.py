@@ -20,6 +20,7 @@ def _():
     if not INSTALL_MARKER.exists():
         packages = [
             "transformers>=4.51.0",
+            "bitsandbytes>=0.45.0",
             "diffusers>=0.33.0",
             "accelerate>=1.6.0",
             "safetensors>=0.5.3",
@@ -41,7 +42,7 @@ def _():
         INSTALL_MARKER.touch()
 
     import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
     # Keep loaded pipelines between reactive reruns of this notebook cell.
     state = globals().setdefault(
@@ -50,17 +51,29 @@ def _():
          "lock": threading.RLock(), "last_image": None},
     )
 
-    QWEN_ID = "Qwen/Qwen3-0.6B"
+    QWEN_ID = "Qwen/Qwen3-32B"
     FLUX_ID = "black-forest-labs/FLUX.1-schnell"
 
     def load_qwen():
         with state["lock"]:
             if state["qwen"] is None:
                 tokenizer = AutoTokenizer.from_pretrained(QWEN_ID)
-                kwargs = {"device_map": "auto"}
-                if torch.cuda.is_available():
-                    kwargs["torch_dtype"] = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-                model = AutoModelForCausalLM.from_pretrained(QWEN_ID, **kwargs)
+                if not torch.cuda.is_available():
+                    raise RuntimeError("Qwen3-32B برای اجرای این نسخه به GPU سازگار با 4-bit نیاز دارد.")
+                compute_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+                quantization = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_quant_type="nf4",
+                    bnb_4bit_compute_dtype=compute_dtype,
+                    bnb_4bit_use_double_quant=True,
+                )
+                model = AutoModelForCausalLM.from_pretrained(
+                    QWEN_ID,
+                    device_map="auto",
+                    torch_dtype=compute_dtype,
+                    quantization_config=quantization,
+                    low_cpu_mem_usage=True,
+                )
                 state["qwen_tokenizer"] = tokenizer
                 state["qwen"] = model
             return state["qwen"], state["qwen_tokenizer"]
@@ -111,7 +124,7 @@ def _():
 # ✦ PRIME AI
 ### چت و تولید تصویر با اجرای محلی مدل‌ها
 
-رابط Prime AI با سلول‌های هماهنگ Marimo اجرا می‌شود. برای چت از **Qwen3-0.6B** و برای تصویر از
+رابط Prime AI با سلول‌های هماهنگ Marimo اجرا می‌شود. برای چت از **Qwen3-32B (نسخه 4-bit)** و برای تصویر از
 **FLUX.1 Schnell** استفاده می‌کند. مدل‌ها در همین نشست اجرا می‌شوند؛ درخواست‌ها
 به API سرویس‌های واسطه ارسال نمی‌شوند.
 
@@ -120,7 +133,7 @@ def _():
 تنظیمات منابع Molab فعال کن. نشست‌های Molab موقت‌اند و ممکن است پس از پایان
 نشست، مدل‌های دانلودشده و تاریخچه از بین بروند.
 """),
-        mo.md("## گفت‌وگو با Qwen3"),
+        mo.md("## گفت‌وگو با Qwen3-32B"),
         chat,
         mo.md("## تولید تصویر با FLUX.1 Schnell"),
         image_prompt,
