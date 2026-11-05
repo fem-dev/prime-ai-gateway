@@ -51,7 +51,24 @@ def _(mo):
     session_secret = mo.ui.text(label="Session secret (use a long random string)", kind="password")
     hf_token = mo.ui.text(label="Hugging Face token", kind="password")
     mo.vstack([
-        mo.md("## Configure this temporary session\nEnter secrets only into this private running session. Do not paste them into notebook code or commit them to GitHub."),
+        mo.md("""
+## قبل از اجرا: توکن Hugging Face را بساز
+
+برای اتصال گیت‌وی به مدل‌های چت و تصویر:
+
+1. وارد صفحهٔ رسمی [Hugging Face Tokens](https://huggingface.co/settings/tokens) شو.
+2. گزینهٔ **Create new token** را بزن و نوع **Fine-grained** را انتخاب کن.
+3. نامی مثل `prime-ai-gateway` برای توکن بگذار.
+4. مجوز **Make calls to Inference Providers** را فعال کن و توکن را بساز.
+5. توکن ساخته‌شده (معمولاً با `hf_` شروع می‌شود) را در کادر پایین وارد کن.
+
+**تفاوت دو کلید:**
+- **Hugging Face token**: دسترسی گیت‌وی به سرویس مدل‌ها.
+- **Prime API key**: کلیدی که بعداً از پنل گیت‌وی می‌سازی و به برنامهٔ خودت می‌دهی.
+
+ممکن است استفاده از مدل‌ها مشمول محدودیت مصرف یا هزینهٔ ارائه‌دهنده باشد. توکن را در کد یا GitHub قرار نده و با کسی به اشتراک نگذار.
+"""),
+        mo.md("## تنظیمات این نشست موقت\nبرای پنل، رمز مدیر و یک Session Secret طولانی وارد کن. این اطلاعات مخصوص همین نشست هستند."),
         admin_password, session_secret, hf_token
     ])
     return admin_password, hf_token, session_secret
