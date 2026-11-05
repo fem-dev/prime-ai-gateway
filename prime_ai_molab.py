@@ -19,7 +19,7 @@ def _():
 
     import marimo as mo
 
-    INSTALL_MARKER = Path.home() / ".prime_ai_deps_installed_qwen_image_2512"
+    INSTALL_MARKER = Path.home() / ".prime_ai_deps_installed_z_anime"
     if not INSTALL_MARKER.exists():
         packages = [
             "transformers>=4.51.0",
@@ -47,7 +47,7 @@ def _():
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     QWEN_ID = "Qwen/Qwen3-32B"
-    IMAGE_ID = "Qwen/Qwen-Image-2512"
+    IMAGE_ID = "SeeSee21/Z-Anime"
     state = globals().setdefault(
         "_prime_ai_state",
         {
@@ -153,22 +153,24 @@ def _():
     def generate_image(prompt_text):
         if not torch.cuda.is_available():
             return "برای ساخت تصویر باید GPU را در تنظیمات Molab فعال کنی."
-        from diffusers import DiffusionPipeline
+        from diffusers import ZImagePipeline
 
         with state["lock"]:
             unload_chat_model()
             if state["image_pipe"] is None:
                 dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-                state["image_pipe"] = DiffusionPipeline.from_pretrained(
+                state["image_pipe"] = ZImagePipeline.from_pretrained(
                     IMAGE_ID,
+                    subfolder="diffusers",
                     torch_dtype=dtype,
                 ).to("cuda")
             result = state["image_pipe"](
                 prompt=prompt_text,
-                width=1328,
-                height=1328,
-                num_inference_steps=50,
-                true_cfg_scale=4.0,
+                width=832,
+                height=1216,
+                num_inference_steps=40,
+                guidance_scale=4.0,
+                negative_prompt="low quality, blurry, poorly drawn, bad anatomy, extra fingers, missing fingers, deformed hands, text, watermark",
                 generator=torch.Generator(device="cuda").manual_seed(
                     int(torch.randint(0, 2**31 - 1, (1,)).item())
                 ),
@@ -228,7 +230,7 @@ def _():
 
 همه‌چیز از همین کادر چت انجام می‌شود:
 - **Qwen3-32B (BF16)** برای گفت‌وگو و تشخیص درخواست ساخت تصویر
-- **Qwen-Image-2512 (BF16)** برای تولید خودکار تصویر
+- **Z-Anime (BF16)** برای تولید تخصصی تصویر انیمه
 
 فقط درخواست ساخت تصویرت را در چت بنویس؛ Prime AI تشخیص می‌دهد و تصویر را همان‌جا در گفت‌وگو نمایش می‌دهد.
 برای اجرای مدل‌ها GPU را در تنظیمات Molab فعال کن. بار اول، وزن‌های عمومی مدل‌ها بدون API Key یا توکن Hugging Face دانلود می‌شوند.
