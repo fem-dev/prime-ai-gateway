@@ -162,9 +162,20 @@ def _():
                 state["image_loading"] = True
                 state["image_error"] = None
                 try:
+                    # The Diffusers pipeline is stored in the repository's diffusers/ subfolder.
+                    from huggingface_hub import snapshot_download
+                    snapshot_dir = snapshot_download(
+                        repo_id=IMAGE_ID,
+                        revision="main",
+                        allow_patterns=["diffusers/*"],
+                    )
+                    local_model_dir = Path(snapshot_dir) / "diffusers"
+                    if not (local_model_dir / "model_index.json").is_file():
+                        raise FileNotFoundError(
+                            f"Z-Anime model_index.json not found in {local_model_dir}"
+                        )
                     state["image_pipe"] = ZImagePipeline.from_pretrained(
-                        IMAGE_ID,
-                        subfolder="diffusers",
+                        str(local_model_dir),
                         torch_dtype=dtype,
                     ).to("cuda")
                 except Exception as exc:
