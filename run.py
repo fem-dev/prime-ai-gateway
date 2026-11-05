@@ -6,7 +6,7 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
-    # Prime AI — single-cell local-model chat for Molab.
+    # Prime AI — local-model chat and image generation for Molab.
     # Public model weights are downloaded anonymously; no HF/API token is used.
     import os
     import subprocess
@@ -104,14 +104,14 @@ def _():
         rows=3,
     )
     make_image = mo.ui.button(label="ساخت تصویر با FLUX.1 Schnell", kind="primary")
-    image_status = mo.md("برای تولید تصویر، GPU را از تنظیمات منابع Molab فعال کن. بار اول دانلود مدل ممکن است زمان‌بر باشد.")
+    image_hint = mo.md("برای تولید تصویر، GPU را از تنظیمات منابع Molab فعال کن. بار اول دانلود مدل ممکن است زمان‌بر باشد.")
 
     mo.vstack([
         mo.md("""
 # ✦ PRIME AI
 ### چت و تولید تصویر با اجرای محلی مدل‌ها
 
-این Notebook یک سلول اجرایی دارد. برای چت از **Qwen3-0.6B** و برای تصویر از
+رابط Prime AI با سلول‌های هماهنگ Marimo اجرا می‌شود. برای چت از **Qwen3-0.6B** و برای تصویر از
 **FLUX.1 Schnell** استفاده می‌کند. مدل‌ها در همین نشست اجرا می‌شوند؛ درخواست‌ها
 به API سرویس‌های واسطه ارسال نمی‌شوند.
 
@@ -125,7 +125,7 @@ def _():
         mo.md("## تولید تصویر با FLUX.1 Schnell"),
         image_prompt,
         make_image,
-        image_status,
+        image_hint,
         mo.md("---\nPrime AI · مدل‌ها روی محیط همین Notebook اجرا می‌شوند."),
     ])
     return mo, torch, state, FLUX_ID, image_prompt, make_image
