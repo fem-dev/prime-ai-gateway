@@ -16,11 +16,11 @@ def _():
 
     import marimo as mo
 
-    INSTALL_MARKER = Path.home() / ".prime_ai_deps_installed"
+    INSTALL_MARKER = Path.home() / ".prime_ai_deps_installed_qwen_image_2512"
     if not INSTALL_MARKER.exists():
         packages = [
             "transformers>=4.51.0",
-            "diffusers>=0.33.0",
+            "git+https://github.com/huggingface/diffusers",
             "accelerate>=1.6.0",
             "safetensors>=0.5.3",
             "sentencepiece>=0.2.0",
@@ -46,12 +46,12 @@ def _():
     # Keep loaded pipelines between reactive reruns of this notebook cell.
     state = globals().setdefault(
         "_prime_ai_state",
-        {"qwen": None, "qwen_tokenizer": None, "flux": None,
+        {"qwen": None, "qwen_tokenizer": None, "image_pipe": None,
          "lock": threading.RLock(), "last_image": None},
     )
 
     QWEN_ID = "Qwen/Qwen3-32B"
-    FLUX_ID = "black-forest-labs/FLUX.1-dev"
+    IMAGE_ID = "Qwen/Qwen-Image-2512"
 
     def load_qwen():
         with state["lock"]:
@@ -108,7 +108,7 @@ def _():
         placeholder="مثلاً: یک منظره فانتزی از شهر آینده در غروب، سبک نقاشی دیجیتال",
         rows=3,
     )
-    make_image = mo.ui.button(label="ساخت تصویر با FLUX.1 Dev", kind="primary")
+    make_image = mo.ui.button(label="ساخت تصویر با Qwen-Image-2512", kind="primary")
     image_hint = mo.md("برای تولید تصویر، GPU را از تنظیمات منابع Molab فعال کن. بار اول دانلود مدل ممکن است زمان‌بر باشد.")
 
     mo.vstack([
@@ -117,7 +117,7 @@ def _():
 ### چت و تولید تصویر با اجرای محلی مدل‌ها
 
 رابط Prime AI با سلول‌های هماهنگ Marimo اجرا می‌شود. برای چت از **Qwen3-32B (نسخه 4-bit)** و برای تصویر از
-**FLUX.1 Dev** استفاده می‌کند. مدل‌ها در همین نشست اجرا می‌شوند؛ درخواست‌ها
+**Qwen-Image-2512 (BF16)** استفاده می‌کند. مدل‌ها در همین نشست اجرا می‌شوند؛ درخواست‌ها
 به API سرویس‌های واسطه ارسال نمی‌شوند.
 
 **نیازی به API Key یا توکن Hugging Face نیست.** وزن‌های عمومی مدل‌ها هنگام
@@ -127,39 +127,52 @@ def _():
 """),
         mo.md("## گفت‌وگو با Qwen3-32B"),
         chat,
-        mo.md("## تولید تصویر با FLUX.1 Schnell"),
+        mo.md("## تولید تصویر با Qwen-Image-2512"),
         image_prompt,
         make_image,
         image_hint,
         mo.md("---\nPrime AI · مدل‌ها روی محیط همین Notebook اجرا می‌شوند."),
     ])
-    return mo, torch, state, FLUX_ID, image_prompt, make_image
+    return mo, torch, state, IMAGE_ID, image_prompt, make_image
 
 
 @app.cell
-def _(mo, torch, state, FLUX_ID, image_prompt, make_image):
+def _(mo, torch, state, IMAGE_ID, image_prompt, make_image):
     # UI values must be read in a different cell from the one that creates them.
     mo.stop(not make_image.value)
     prompt_text = image_prompt.value.strip()
     if not prompt_text:
         image_status = mo.md("ابتدا توضیح تصویر را بنویس.")
     elif not torch.cuda.is_available():
-        image_status = mo.md("برای FLUX.1 Schnell به GPU نیاز است. GPU را در تنظیمات Molab فعال کن و دوباره اجرا کن.")
+        image_status = mo.md("برای Qwen-Image-2512 به GPU نیاز است. GPU را در تنظیمات Molab فعال کن و دوباره اجرا کن.")
     else:
         try:
-            from diffusers import FluxPipeline
+            import gc
+            from diffusers import DiffusionPipeline
             with state["lock"]:
-                if state["flux"] is None:
+                # Free VRAM used by the 32B chat model before loading the image model.
+                if state["qwen"] is not None:
+                    del state["qwen"]
+                    state["qwen"] = None
+                    state["qwen_tokenizer"] = None
+                    gc.collect()
+                    torch.cuda.empty_cache()
+                if state["image_pipe"] is None:
                     dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-                    pipe = FluxPipeline.from_pretrained(FLUX_ID, torch_dtype=dtype)
-                    pipe.enable_model_cpu_offload()
-                    state["flux"] = pipe
-                result = state["flux"](
+                    pipe = DiffusionPipeline.from_pretrained(
+                        IMAGE_ID,
+                        torch_dtype=dtype,
+                    ).to("cuda")
+                    state["image_pipe"] = pipe
+                result = state["image_pipe"](
                     prompt=prompt_text,
-                    height=1024,
-                    width=1024,
-                    num_inference_steps=28,
-                    guidance_scale=3.5,
+                    width=1328,
+                    height=1328,
+                    num_inference_steps=50,
+                    true_cfg_scale=4.0,
+                    generator=torch.Generator(device="cuda").manual_seed(
+                        int(torch.randint(0, 2**31 - 1, (1,)).item())
+                    ),
                 )
                 state["last_image"] = result.images[0]
             image_status = mo.vstack([
