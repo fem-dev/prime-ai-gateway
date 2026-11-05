@@ -106,39 +106,6 @@ def _():
     make_image = mo.ui.button(label="ساخت تصویر با FLUX.1 Schnell", kind="primary")
     image_status = mo.md("برای تولید تصویر، GPU را از تنظیمات منابع Molab فعال کن. بار اول دانلود مدل ممکن است زمان‌بر باشد.")
 
-    if make_image.value:
-        prompt_text = image_prompt.value.strip()
-        if not prompt_text:
-            image_status = mo.md("ابتدا توضیح تصویر را بنویس.")
-        elif not torch.cuda.is_available():
-            image_status = mo.md("برای FLUX.1 Schnell به GPU نیاز است. GPU را در تنظیمات Molab فعال کن و دوباره اجرا کن.")
-        else:
-            try:
-                from diffusers import FluxPipeline
-                with state["lock"]:
-                    if state["flux"] is None:
-                        dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-                        pipe = FluxPipeline.from_pretrained(FLUX_ID, torch_dtype=dtype)
-                        pipe.enable_model_cpu_offload()
-                        state["flux"] = pipe
-                    result = state["flux"](
-                        prompt=prompt_text,
-                        height=1024,
-                        width=1024,
-                        num_inference_steps=4,
-                        guidance_scale=0.0,
-                    )
-                    state["last_image"] = result.images[0]
-                image_status = mo.vstack([
-                    mo.md("### تصویر آماده شد"),
-                    mo.image(state["last_image"], width=512),
-                ])
-            except Exception as exc:
-                image_status = mo.vstack([
-                    mo.md("### تولید تصویر ناموفق بود"),
-                    mo.code(str(exc)[-3000:]),
-                ])
-
     mo.vstack([
         mo.md("""
 # ✦ PRIME AI
@@ -161,7 +128,45 @@ def _():
         image_status,
         mo.md("---\nPrime AI · مدل‌ها روی محیط همین Notebook اجرا می‌شوند."),
     ])
-    return
+    return mo, torch, state, FLUX_ID, image_prompt, make_image
+
+
+@app.cell
+def _(mo, torch, state, FLUX_ID, image_prompt, make_image):
+    # UI values must be read in a different cell from the one that creates them.
+    mo.stop(not make_image.value)
+    prompt_text = image_prompt.value.strip()
+    if not prompt_text:
+        image_status = mo.md("ابتدا توضیح تصویر را بنویس.")
+    elif not torch.cuda.is_available():
+        image_status = mo.md("برای FLUX.1 Schnell به GPU نیاز است. GPU را در تنظیمات Molab فعال کن و دوباره اجرا کن.")
+    else:
+        try:
+            from diffusers import FluxPipeline
+            with state["lock"]:
+                if state["flux"] is None:
+                    dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+                    pipe = FluxPipeline.from_pretrained(FLUX_ID, torch_dtype=dtype)
+                    pipe.enable_model_cpu_offload()
+                    state["flux"] = pipe
+                result = state["flux"](
+                    prompt=prompt_text,
+                    height=1024,
+                    width=1024,
+                    num_inference_steps=4,
+                    guidance_scale=0.0,
+                )
+                state["last_image"] = result.images[0]
+            image_status = mo.vstack([
+                mo.md("### تصویر آماده شد"),
+                mo.image(state["last_image"], width=512),
+            ])
+        except Exception as exc:
+            image_status = mo.vstack([
+                mo.md("### تولید تصویر ناموفق بود"),
+                mo.code(str(exc)[-3000:]),
+            ])
+    image_status
 
 
 if __name__ == "__main__":
