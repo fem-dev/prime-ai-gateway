@@ -6,9 +6,12 @@ app = marimo.App(width="medium")
 
 @app.cell
 def _():
-    # Prime AI — local-model chat and image generation for Molab.
-    # Public model weights are downloaded anonymously; no HF/API token is used.
-    import os
+    # Prime AI: one-cell, single-chat interface with automatic image routing.
+    import base64
+    import gc
+    import io
+    import json
+    import re
     import subprocess
     import sys
     import threading
@@ -43,148 +46,175 @@ def _():
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    # Keep loaded pipelines between reactive reruns of this notebook cell.
-    state = globals().setdefault(
-        "_prime_ai_state",
-        {"qwen": None, "qwen_tokenizer": None, "image_pipe": None,
-         "lock": threading.RLock(), "last_image": None},
-    )
-
     QWEN_ID = "Qwen/Qwen3-32B"
     IMAGE_ID = "Qwen/Qwen-Image-2512"
+    state = globals().setdefault(
+        "_prime_ai_state",
+        {
+            "qwen": None,
+            "qwen_tokenizer": None,
+            "image_pipe": None,
+            "lock": threading.RLock(),
+        },
+    )
+
+    def unload_image_model():
+        if state["image_pipe"] is not None:
+            del state["image_pipe"]
+            state["image_pipe"] = None
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
+    def unload_chat_model():
+        if state["qwen"] is not None:
+            del state["qwen"]
+            state["qwen"] = None
+            state["qwen_tokenizer"] = None
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
     def load_qwen():
         with state["lock"]:
+            # Only one large model stays on the GPU at a time.
+            unload_image_model()
             if state["qwen"] is None:
-                tokenizer = AutoTokenizer.from_pretrained(QWEN_ID)
                 if not torch.cuda.is_available():
-                    raise RuntimeError("برای اجرای Qwen3-32B به GPU نیاز است.")
-                compute_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+                    raise RuntimeError("برای اجرای مدل‌ها، GPU را در تنظیمات Molab فعال کن.")
+                tokenizer = AutoTokenizer.from_pretrained(QWEN_ID)
+                dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
                 model = AutoModelForCausalLM.from_pretrained(
                     QWEN_ID,
                     device_map="auto",
-                    torch_dtype=compute_dtype,
+                    torch_dtype=dtype,
                     low_cpu_mem_usage=True,
                 )
                 state["qwen_tokenizer"] = tokenizer
                 state["qwen"] = model
             return state["qwen"], state["qwen_tokenizer"]
 
-    def answer(messages, config):
+    def ask_qwen(messages):
         model, tokenizer = load_qwen()
-        chat_messages = []
+        conversation = []
         for item in messages:
             role = getattr(item, "role", "user")
             text = getattr(item, "content", "")
-            if isinstance(text, str) and role in ("system", "user", "assistant"):
-                chat_messages.append({"role": role, "content": text})
-        if not chat_messages:
-            return "لطفاً یک پیام متنی بفرست."
+            if isinstance(text, str) and role in ("user", "assistant", "system"):
+                conversation.append({"role": role, "content": text})
+        if not conversation:
+            return "لطفاً یک پیام بفرست."
+
+        # Qwen decides whether this turn needs an image or a normal text reply.
+        router_instruction = {
+            "role": "system",
+            "content": (
+                "You are Prime AI's request router and assistant. Read the conversation. "
+                "If the latest user message clearly asks to create, generate, draw, or make "
+                "an image/picture/illustration, return ONLY valid JSON in this exact shape: "
+                '{"action":"image","prompt":"a detailed image-generation prompt"} . '
+                "Translate and expand the user's image idea into a clear visual prompt. "
+                "Otherwise return ONLY valid JSON in this exact shape: "
+                '{"action":"chat","response":"your helpful answer in the user\'s language"}. '
+                "Do not route to image generation when the user is merely discussing images, "
+                "asking how to make them, or asking a question about an existing image."
+            ),
+        }
+        routed = [router_instruction] + conversation
         prompt = tokenizer.apply_chat_template(
-            chat_messages, tokenize=False, add_generation_prompt=True,
+            routed,
+            tokenize=False,
+            add_generation_prompt=True,
             enable_thinking=False,
         )
         inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
         with state["lock"], torch.inference_mode():
             output = model.generate(
                 **inputs,
-                max_new_tokens=512,
-                do_sample=True,
-                temperature=0.7,
-                top_p=0.8,
+                max_new_tokens=600,
+                do_sample=False,
                 pad_token_id=tokenizer.eos_token_id,
             )
         new_tokens = output[0][inputs["input_ids"].shape[-1]:]
-        return tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
+        raw = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
+        match = re.search(r"\{.*\}", raw, flags=re.DOTALL)
+        if not match:
+            return {"action": "chat", "response": raw or "متوجه درخواستت نشدم؛ دوباره بگو."}
+        try:
+            result = json.loads(match.group(0))
+            if result.get("action") == "image" and result.get("prompt"):
+                return {"action": "image", "prompt": str(result["prompt"])}
+            if result.get("action") == "chat":
+                return {"action": "chat", "response": str(result.get("response", ""))}
+        except (json.JSONDecodeError, AttributeError, TypeError):
+            pass
+        return {"action": "chat", "response": raw}
+
+    def generate_image(prompt_text):
+        if not torch.cuda.is_available():
+            return "برای ساخت تصویر باید GPU را در تنظیمات Molab فعال کنی."
+        from diffusers import DiffusionPipeline
+
+        with state["lock"]:
+            unload_chat_model()
+            if state["image_pipe"] is None:
+                dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+                state["image_pipe"] = DiffusionPipeline.from_pretrained(
+                    IMAGE_ID,
+                    torch_dtype=dtype,
+                ).to("cuda")
+            result = state["image_pipe"](
+                prompt=prompt_text,
+                width=1328,
+                height=1328,
+                num_inference_steps=50,
+                true_cfg_scale=4.0,
+                generator=torch.Generator(device="cuda").manual_seed(
+                    int(torch.randint(0, 2**31 - 1, (1,)).item())
+                ),
+            )
+            image = result.images[0]
+
+        # Return the generated image inline in the same chat conversation.
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG")
+        encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+        return "تصویرت آماده شد!\n\n![تصویر تولیدشده](data:image/png;base64," + encoded + ")"
+
+    def answer(messages, config):
+        try:
+            decision = ask_qwen(messages)
+            if decision.get("action") == "image":
+                return generate_image(decision["prompt"])
+            return decision.get("response", "متوجه درخواستت نشدم.")
+        except Exception as exc:
+            return "خطا در اجرای Prime AI:\n\n" + str(exc)[-2500:]
 
     chat = mo.ui.chat(
         answer,
-        prompts=["سلام! خودت را معرفی کن.", "یک ایده برای پروژه برنامه‌نویسی بده."],
+        prompts=[
+            "سلام! خودت را معرفی کن.",
+            "یک ایده برای پروژه برنامه‌نویسی بده.",
+            "یک تصویر فانتزی از شهری روی ابرها بساز.",
+        ],
         show_configuration_controls=False,
     )
-
-    image_prompt = mo.ui.text_area(
-        label="توضیح تصویر",
-        placeholder="مثلاً: یک منظره فانتزی از شهر آینده در غروب، سبک نقاشی دیجیتال",
-        rows=3,
-    )
-    make_image = mo.ui.button(label="ساخت تصویر با Qwen-Image-2512", kind="primary")
-    image_hint = mo.md("برای تولید تصویر، GPU را از تنظیمات منابع Molab فعال کن. بار اول دانلود مدل ممکن است زمان‌بر باشد.")
 
     mo.vstack([
         mo.md("""
 # ✦ PRIME AI
-### چت و تولید تصویر با اجرای محلی مدل‌ها
+### یک چت هوشمند برای گفت‌وگو و ساخت تصویر
 
-رابط Prime AI با سلول‌های هماهنگ Marimo اجرا می‌شود. برای چت از **Qwen3-32B (BF16)** و برای تصویر از
-**Qwen-Image-2512 (BF16)** استفاده می‌کند. مدل‌ها در همین نشست اجرا می‌شوند؛ درخواست‌ها
-به API سرویس‌های واسطه ارسال نمی‌شوند.
+همه‌چیز از همین کادر چت انجام می‌شود:
+- **Qwen3-32B (BF16)** برای گفت‌وگو و تشخیص درخواست ساخت تصویر
+- **Qwen-Image-2512 (BF16)** برای تولید خودکار تصویر
 
-**نیازی به API Key یا توکن Hugging Face نیست.** وزن‌های عمومی مدل‌ها هنگام
-اولین استفاده به‌صورت ناشناس دانلود می‌شوند. برای تولید تصویر، GPU را از
-تنظیمات منابع Molab فعال کن. نشست‌های Molab موقت‌اند و ممکن است پس از پایان
-نشست، مدل‌های دانلودشده و تاریخچه از بین بروند.
+فقط درخواست ساخت تصویرت را در چت بنویس؛ Prime AI تشخیص می‌دهد و تصویر را همان‌جا در گفت‌وگو نمایش می‌دهد.
+برای اجرای مدل‌ها GPU را در تنظیمات Molab فعال کن. بار اول، وزن‌های عمومی مدل‌ها بدون API Key یا توکن Hugging Face دانلود می‌شوند.
 """),
-        mo.md("## گفت‌وگو با Qwen3-32B"),
         chat,
-        mo.md("## تولید تصویر با Qwen-Image-2512"),
-        image_prompt,
-        make_image,
-        image_hint,
-        mo.md("---\nPrime AI · مدل‌ها روی محیط همین Notebook اجرا می‌شوند."),
+        mo.md("---\nPrime AI · یک سلول، یک چت، دو مدل محلی."),
     ])
-    return mo, torch, state, IMAGE_ID, image_prompt, make_image
-
-
-@app.cell
-def _(mo, torch, state, IMAGE_ID, image_prompt, make_image):
-    # UI values must be read in a different cell from the one that creates them.
-    mo.stop(not make_image.value)
-    prompt_text = image_prompt.value.strip()
-    if not prompt_text:
-        image_status = mo.md("ابتدا توضیح تصویر را بنویس.")
-    elif not torch.cuda.is_available():
-        image_status = mo.md("برای Qwen-Image-2512 به GPU نیاز است. GPU را در تنظیمات Molab فعال کن و دوباره اجرا کن.")
-    else:
-        try:
-            import gc
-            from diffusers import DiffusionPipeline
-            with state["lock"]:
-                # Free VRAM used by the 32B chat model before loading the image model.
-                if state["qwen"] is not None:
-                    del state["qwen"]
-                    state["qwen"] = None
-                    state["qwen_tokenizer"] = None
-                    gc.collect()
-                    torch.cuda.empty_cache()
-                if state["image_pipe"] is None:
-                    dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-                    pipe = DiffusionPipeline.from_pretrained(
-                        IMAGE_ID,
-                        torch_dtype=dtype,
-                    ).to("cuda")
-                    state["image_pipe"] = pipe
-                result = state["image_pipe"](
-                    prompt=prompt_text,
-                    width=1328,
-                    height=1328,
-                    num_inference_steps=50,
-                    true_cfg_scale=4.0,
-                    generator=torch.Generator(device="cuda").manual_seed(
-                        int(torch.randint(0, 2**31 - 1, (1,)).item())
-                    ),
-                )
-                state["last_image"] = result.images[0]
-            image_status = mo.vstack([
-                mo.md("### تصویر آماده شد"),
-                mo.image(state["last_image"], width=512),
-            ])
-        except Exception as exc:
-            image_status = mo.vstack([
-                mo.md("### تولید تصویر ناموفق بود"),
-                mo.code(str(exc)[-3000:]),
-            ])
-    image_status
 
 
 if __name__ == "__main__":
