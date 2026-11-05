@@ -108,7 +108,7 @@ def _():
         placeholder="مثلاً: یک منظره فانتزی از شهر آینده در غروب، سبک نقاشی دیجیتال",
         rows=3,
     )
-    make_image = mo.ui.button(label="ساخت تصویر با Qwen-Image-2512", kind="primary")
+    make_image = mo.ui.button(label="ساخت تصویر با Qwen-Image-2512", kind="success")
     image_hint = mo.md("برای تولید تصویر، GPU را از تنظیمات منابع Molab فعال کن. بار اول دانلود مدل ممکن است زمان‌بر باشد.")
 
     mo.vstack([
