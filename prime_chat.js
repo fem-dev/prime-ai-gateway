@@ -28,7 +28,7 @@ function render({ model, el }) {
   }
   function addFiles(list) {
     Array.from(list).forEach(f=>{
-      if(f.size>8*1024*1024){status("حداکثر ۸ مگابایت",false);return;}
+      if(f.size>5*1024*1024){status("حداکثر ۵ مگابایت",false);return;}
       const r=new FileReader();
       r.onload=()=>{uploads.push({name:f.name,type:f.type||"application/octet-stream",data:String(r.result).split(",")[1]});drawFiles();};
       r.readAsDataURL(f);
