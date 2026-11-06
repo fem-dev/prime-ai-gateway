@@ -1,25 +1,23 @@
 # Prime AI
 
-Prime AI's Molab notebook is split into small, version-controlled files so the notebook itself stays readable.
+Prime AI loads its application files directly from GitHub Raw at startup.
 
 ## Molab entry point
 
-Open `prime_ai_molab.py` from this GitHub repository in Molab. Molab makes the other files in the repository available beside the notebook when it is opened from GitHub.
+Open `prime_ai_molab.py` in Molab. The notebook downloads the latest files from the `main` branch using this base URL:
 
-## Project layout
+`https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/`
 
-- `prime_ai_molab.py` — small Marimo entry point and UI cells.
+## Project files
+
+- `prime_ai_molab.py` — compact Molab entry point and Raw loader.
 - `prime_ai_engine.py` — model loading, chat routing, web search, and image generation.
 - `pixel_ghost.html` — floating Pixel Ghost animation.
-- `prime_theme.css` — Prime AI dark theme.
-- `PRIME_AI_KNOWLEDGE.md` — editable project knowledge and instructions.
-- `main.py` — separate FastAPI API-gateway service; it is not the Molab notebook.
-- `requirements.txt` — dependencies for the FastAPI gateway.
+- `prime_theme.css` — Prime AI theme.
+- `PRIME_AI_KNOWLEDGE.md` — editable project knowledge.
+- `main.py` — separate FastAPI gateway service.
+- `requirements.txt` — gateway dependencies.
 
-The notebook imports `build_prime_ai` from `prime_ai_engine.py`; it reads the HTML, CSS, and knowledge file from the same repository directory. Keep these files together when opening the notebook in Molab.
+At startup, the notebook downloads the engine, CSS, Pixel Ghost HTML, and knowledge file from GitHub Raw into a temporary project directory. It then imports the downloaded engine and uses the downloaded CSS and assets. A failed download raises an error naming the exact file and Raw URL, so GitHub/network loading problems are easier to identify.
 
-## Runtime notes
-
-The Molab app needs a GPU enabled for local Qwen and Anima inference. The first run may install Python packages and download model weights, so initial startup can take longer than later launches.
-
-For Molab troubleshooting, check the app's startup logs if launch fails; a generic launch banner alone does not identify the underlying exception.
+The first launch may take longer while Python dependencies and model weights are installed. Enable a GPU in Molab for local inference.
