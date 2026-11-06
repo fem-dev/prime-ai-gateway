@@ -390,13 +390,18 @@ def build_prime_ai(_legacy_search_toggle=None):
                         verified_marker = checkpoint.with_suffix(checkpoint.suffix + ".sha256")
                         if not checkpoint.exists() or checkpoint.stat().st_size < 20_000_000_000:
                             partial = checkpoint.with_suffix(checkpoint.suffix + ".part")
-                            # Use Civitai's canonical model-version download URL.
-                            # Extra format/size/fp filters can trigger HTTP 400 when
-                            # they do not match the published file metadata.
-                            download_url = "https://civitai.com/api/download/models/691639"
+                            # Civitai model downloads redirect to object storage.
+                            # For this download endpoint, Civitai documents token query
+                            # auth for redirect compatibility; a Bearer header can be
+                            # interpreted incorrectly by the storage host after redirect.
+                            download_url = (
+                                "https://civitai.com/api/download/models/691639?token="
+                                + urllib.parse.quote(token, safe="")
+                            )
                             headers = {
-                                "User-Agent": "Prime-AI-Molab/1.0",
-                                "Authorization": "Bearer " + token,
+                                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
+                                              "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                              "Chrome/131.0.0.0 Safari/537.36",
                             }
                             offset = partial.stat().st_size if partial.exists() else 0
                             if offset:
@@ -414,7 +419,7 @@ def build_prime_ai(_legacy_search_toggle=None):
                                     error_body = ""
                                 raise RuntimeError(
                                     f"Civitai رد کرد (HTTP {http_error.code}). "
-                                    f"آدرس درخواست: {download_url}. "
+                                    "درخواست دانلود Civitai رد شد. "
                                     f"پاسخ سرور: {error_body[:2500] or http_error.reason}"
                                 ) from http_error
                             with response_context as response:
