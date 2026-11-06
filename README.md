@@ -1,23 +1,20 @@
 # Prime AI
 
-Prime AI loads its application files directly from GitHub Raw at startup.
+Prime AI loads its project files from individual GitHub Raw URLs at startup. The Molab entry point uses one Marimo cell.
 
 ## Molab entry point
 
-Open `prime_ai_molab.py` in Molab. The notebook downloads the latest files from the `main` branch using this base URL:
-
-`https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/`
+Open `prime_ai_molab.py` in Molab.
 
 ## Project files
 
-- `prime_ai_molab.py` — compact Molab entry point and Raw loader.
-- `prime_ai_engine.py` — model loading, chat routing, web search, and image generation.
-- `pixel_ghost.html` — floating Pixel Ghost animation.
-- `prime_theme.css` — Prime AI theme.
+- `prime_ai_molab.py` / `run.py` — one-cell Molab loader.
+- `prime_ai_engine.py` — chat, model routing, image generation, and UI.
+- `prime_theme.css` — dark industrial theme.
+- `pixel_ghost.html` — transparent floating pixel animation.
 - `PRIME_AI_KNOWLEDGE.md` — editable project knowledge.
 - `main.py` — separate FastAPI gateway service.
-- `requirements.txt` — gateway dependencies.
 
-At startup, the notebook downloads the engine, CSS, Pixel Ghost HTML, and knowledge file from GitHub Raw into a temporary project directory. It then imports the downloaded engine and uses the downloaded CSS and assets. A failed download raises an error naming the exact file and Raw URL, so GitHub/network loading problems are easier to identify.
+At startup, the loader downloads each asset from its own explicit Raw URL into a temporary directory. The image model is no longer preloaded at notebook startup; Qwen loads when the first chat request arrives, and Anima loads only when an image is requested. This avoids a large background GPU allocation while Molab is trying to start the kernel.
 
-The first launch may take longer while Python dependencies and model weights are installed. Enable a GPU in Molab for local inference.
+Enable a GPU in Molab before sending chat or image requests. The first request may take time while model weights are downloaded.
