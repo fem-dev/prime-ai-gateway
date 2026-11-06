@@ -18,9 +18,6 @@ function render({ model, el }) {
   }
   function status(s,thinking) {
     q(".pc-status i").textContent=s;
-    let knife=q(".pc-status .pc-knife");
-    if(thinking && !knife){knife=document.createElement("img");knife.className="pc-knife";knife.src="https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_knife.svg";knife.alt="";q(".pc-status").prepend(knife);}
-    if(!thinking && knife)knife.remove();
     q(".pc-status").classList.toggle("thinking",!!thinking);
     q(".pc-send").classList.toggle("thinking",!!thinking);
     q(".pc-send").hidden=!!thinking;
