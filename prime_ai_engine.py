@@ -91,6 +91,7 @@ def build_prime_ai(_legacy_search_toggle=None):
         if state["image_pipe"] is not None:
             del state["image_pipe"]
             state["image_pipe"] = None
+            state["image_model_loaded"] = None
             gc.collect()
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
@@ -411,8 +412,11 @@ def build_prime_ai(_legacy_search_toggle=None):
                 prompt_file = APP_DIRECTORY / "ANIMA_STYLE_PROMPT.md"
                 if prompt_file.exists():
                     extra_style = prompt_file.read_text(encoding="utf-8").strip()
+                    marker = "<!-- Paste your private style prompt below this line. -->"
+                    if marker in extra_style:
+                        extra_style = extra_style.split(marker, 1)[1].strip()
                     if extra_style and not extra_style.startswith("<!--"):
-                        user_prompt += "\\n\\n" + extra_style
+                        user_prompt += "\n\n" + extra_style
             call_args = {
                 "prompt": "masterpiece, best quality, coherent composition, faithful to the requested subject, " + user_prompt,
                 "width": 1024 if model_choice == "qwen" else 768,
