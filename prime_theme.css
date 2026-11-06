@@ -115,3 +115,72 @@ main [data-testid*="chat"] svg.lucide-bot, main [data-testid*="chat"] svg[class*
 main [data-testid*="chat"]::before { content:""; width:52px; height:52px; background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23aebbb5' d='M18 9h28a7 7 0 0 1 7 7v34l-8-5-7 6-7-6-7 6-7-6-8 5V16a7 7 0 0 1 7-7z'/%3E%3Cpath fill='%2308090b' d='M22 25h6v8h-6zm15 0h6v8h-6zM27 39h10v3H27z'/%3E%3C/svg%3E"); opacity:.12; pointer-events:none; }
 iframe[title="Pixel Ghost Coder"] { width:120px!important; height:94px!important; opacity:.56!important; }
 @media(max-width:650px) { iframe[title="Pixel Ghost Coder"] { width:94px!important; height:74px!important; } }
+
+
+/* Rich chat typography: Markdown emphasis, fenced code, quotes, lists and tables. */
+main [data-testid*="chat"] strong, main [data-testid*="chat"] b {
+  color:#fff0f2 !important;
+  font-weight:800 !important;
+}
+main [data-testid*="chat"] em { color:#e8c4cb !important; }
+main [data-testid*="chat"] pre {
+  direction:ltr !important;
+  text-align:left !important;
+  white-space:pre !important;
+  overflow-x:auto !important;
+  padding:16px 18px !important;
+  margin:12px 0 !important;
+  border:1px solid #512b38 !important;
+  border-left:3px solid #b64a62 !important;
+  border-radius:8px !important;
+  background:#08090d !important;
+  box-shadow:inset 0 0 22px #0008 !important;
+}
+main [data-testid*="chat"] pre code {
+  direction:ltr !important;
+  color:#e8dfe2 !important;
+  font:13px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace !important;
+  background:transparent !important;
+}
+main [data-testid*="chat"] :not(pre) > code {
+  direction:ltr !important;
+  display:inline-block !important;
+  padding:2px 6px !important;
+  border:1px solid #49303a !important;
+  border-radius:4px !important;
+  background:#171116 !important;
+  color:#ffb3c1 !important;
+  font: .92em ui-monospace,monospace !important;
+}
+main [data-testid*="chat"] blockquote {
+  margin:10px 0 !important;
+  padding:8px 14px !important;
+  border-right:3px solid #a34459 !important;
+  border-left:0 !important;
+  background:#171015 !important;
+  color:#cbbfc2 !important;
+}
+main [data-testid*="chat"] table {
+  display:block !important;
+  max-width:100% !important;
+  overflow-x:auto !important;
+  border-collapse:collapse !important;
+}
+main [data-testid*="chat"] th, main [data-testid*="chat"] td {
+  border:1px solid #45313a !important;
+  padding:8px 12px !important;
+}
+main [data-testid*="chat"] th { background:#21131a !important; color:#f0dce1 !important; }
+main [data-testid*="chat"] img { max-width:min(100%,520px) !important; height:auto !important; border-radius:10px !important; }
+main [data-testid*="chat"] button { min-height:34px; }
+iframe[title="Pixel Ghost Coder"] {
+  width:340px !important;height:270px !important;
+  right:4px !important;bottom:4px !important;
+  opacity:.82 !important;
+}
+@media(max-width:650px) {
+  iframe[title="Pixel Ghost Coder"] {
+    width:230px !important;height:182px !important;
+    right:0 !important;bottom:0 !important;opacity:.72 !important;
+  }
+}
