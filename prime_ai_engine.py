@@ -52,6 +52,8 @@ def build_prime_ai(_legacy_search_toggle=None):
         if install_pdf.returncode != 0:
             print("PDF attachment support unavailable:", (install_pdf.stderr or install_pdf.stdout)[-1000:])
 
+    from types import SimpleNamespace
+
     import importlib.util
     if importlib.util.find_spec("anywidget") is None:
         install_widget = subprocess.run(
@@ -498,8 +500,7 @@ def build_prime_ai(_legacy_search_toggle=None):
 ></iframe>
 """)
 
-    # Branded shell around the chat surface. The chat transport remains
-    # Marimo's supported chat widget so attachments and Python callbacks work.
+    # Branded shell around the independent AnyWidget chat surface.
     header = mo.Html("""
     <header class="prime-app-header" dir="rtl">
       <div class="prime-brand">
