@@ -92,16 +92,24 @@ def _():
             if state["qwen"] is None:
                 if not torch.cuda.is_available():
                     raise RuntimeError("برای اجرای مدل‌ها، GPU را در تنظیمات Molab فعال کن.")
-                tokenizer = AutoTokenizer.from_pretrained(QWEN_ID)
-                dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-                model = AutoModelForCausalLM.from_pretrained(
-                    QWEN_ID,
-                    device_map="auto",
-                    torch_dtype=dtype,
-                    low_cpu_mem_usage=True,
-                )
-                state["qwen_tokenizer"] = tokenizer
-                state["qwen"] = model
+                try:
+                    tokenizer = AutoTokenizer.from_pretrained(QWEN_ID)
+                    dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+                    model = AutoModelForCausalLM.from_pretrained(
+                        QWEN_ID,
+                        device_map="auto",
+                        torch_dtype=dtype,
+                        low_cpu_mem_usage=True,
+                    )
+                    state["qwen_tokenizer"] = tokenizer
+                    state["qwen"] = model
+                except Exception:
+                    state["qwen"] = None
+                    state["qwen_tokenizer"] = None
+                    gc.collect()
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                    raise
             return state["qwen"], state["qwen_tokenizer"]
 
     APP_DIRECTORY = Path(__file__).resolve().parent if globals().get("__file__") else Path.cwd()
@@ -207,6 +215,7 @@ def _():
                 dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
                 state["image_loading"] = True
                 state["image_error"] = None
+                pipe = None
                 try:
                     # Official Anima Diffusers distribution uses the modular pipeline.
                     pipe = ModularPipeline.from_pretrained(IMAGE_ID)
@@ -214,6 +223,12 @@ def _():
                     state["image_pipe"] = pipe.to("cuda")
                 except Exception as exc:
                     state["image_error"] = str(exc)
+                    if pipe is not None:
+                        del pipe
+                    state["image_pipe"] = None
+                    gc.collect()
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
                     raise
                 finally:
                     state["image_loading"] = False
@@ -274,9 +289,10 @@ def _():
 
     def answer(messages, config):
         try:
-            decision = ask_qwen(messages)
-            if decision.get("action") == "image":
-                return generate_image(decision["prompt"])
+            with state["lock"]:
+                decision = ask_qwen(messages)
+                if decision.get("action") == "image":
+                    return generate_image(decision["prompt"])
 
             if search_toggle.value:
                 last_user = next(
@@ -301,7 +317,8 @@ def _():
                         )
                     try:
                         # Put retrieved context into the system prompt, not after the user turn.
-                        decision = ask_qwen(messages, web_context=web_results)
+                        with state["lock"]:
+                            decision = ask_qwen(messages, web_context=web_results)
                     except Exception as model_exc:
                         response = decision.get("response", "متوجه درخواستت نشدم.")
                         return (
