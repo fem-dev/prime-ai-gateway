@@ -150,6 +150,7 @@ def build_prime_ai():
                 "an image/picture/illustration, return ONLY valid JSON in this exact shape: "
                 '{"action":"image","prompt":"a detailed image-generation prompt"} . '
                 "Translate and expand the user's image idea into a clear visual prompt. "
+                "If current or recent facts, live information, changing prices or versions, or reliable fresh sources are needed, return ONLY JSON with action search and a concise query. "
                 "Otherwise return ONLY valid JSON in this exact shape: "
                 '{"action":"chat","response":"your helpful answer in the user\'s language"}. '
                 "Do not route to image generation when the user is merely discussing images, "
