@@ -21,7 +21,8 @@ def _():
 
     # Each project file has its own direct GitHub Raw URL.
     RAW_FILES = {
-        "prime_ai_engine.py": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_ai_engine.py?v=d053262fbea9b451e208184c70f097fd49c30f90",
+        "prime_ai_engine.py": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_ai_engine.py",
+        "ANIMA_STYLE_PROMPT.md": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/ANIMA_STYLE_PROMPT.md",
         "prime_theme.css": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_theme.css",
         "pixel_ghost.html": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/pixel_ghost.html",
         "PRIME_AI_KNOWLEDGE.md": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/PRIME_AI_KNOWLEDGE.md",
