@@ -2,13 +2,38 @@
 # [tool.marimo.display]
 # theme = "dark"
 # ///
-import marimo
+
+import importlib.util
+import tempfile
+import urllib.error
+import urllib.request
 from pathlib import Path
 
+import marimo
+
 __generated_with = "0.19.0"
-_SCRIPT_DIR = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd()
-_CSS_PATH = _SCRIPT_DIR / "prime_theme.css"
-app = marimo.App(width="full", css_file=str(_CSS_PATH) if _CSS_PATH.is_file() else None)
+
+RAW_BASE = "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main"
+ASSETS = ("prime_ai_engine.py", "prime_theme.css", "pixel_ghost.html", "PRIME_AI_KNOWLEDGE.md")
+PROJECT_DIR = Path(tempfile.gettempdir()) / "prime-ai-gateway"
+PROJECT_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def fetch_raw_file(filename):
+    url = f"{RAW_BASE}/{filename}"
+    try:
+        request = urllib.request.Request(url, headers={"User-Agent": "Prime-AI-Molab"})
+        with urllib.request.urlopen(request, timeout=30) as response:
+            content = response.read()
+        destination = PROJECT_DIR / filename
+        destination.write_bytes(content)
+        return destination
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        raise RuntimeError(f"Prime AI could not load {filename} from GitHub Raw: {url} ({exc})") from exc
+
+
+FILES = {name: fetch_raw_file(name) for name in ASSETS}
+app = marimo.App(width="full", css_file=str(FILES["prime_theme.css"]))
 
 
 @app.cell
@@ -24,10 +49,15 @@ def _():
 
 @app.cell
 def _(search_toggle):
+    import importlib.util
     import marimo as mo
-    from prime_ai_engine import build_prime_ai
 
-    prime_ui = build_prime_ai(search_toggle)
+    engine_path = FILES["prime_ai_engine.py"]
+    spec = importlib.util.spec_from_file_location("prime_ai_engine", engine_path)
+    engine = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(engine)
+
+    prime_ui = engine.build_prime_ai(search_toggle)
     prime_ui
     return (prime_ui,)
 
