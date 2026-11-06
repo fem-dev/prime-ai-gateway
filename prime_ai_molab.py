@@ -22,7 +22,6 @@ def _():
     # Each project file has its own direct GitHub Raw URL.
     RAW_FILES = {
         "prime_ai_engine.py": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_ai_engine.py",
-        "ANIMA_STYLE_PROMPT.md": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/ANIMA_STYLE_PROMPT.md",
         "prime_theme.css": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_theme.css",
         "pixel_ghost.html": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/pixel_ghost.html",
         "PRIME_AI_KNOWLEDGE.md": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/PRIME_AI_KNOWLEDGE.md",
@@ -49,6 +48,13 @@ def _():
             raise RuntimeError(
                 f"Prime AI could not load {filename} from GitHub Raw: {url} ({exc})"
             ) from exc
+
+    # Create the Anima prompt locally. Keep user-added/private text out of GitHub.
+    private_prompt = project_dir / "ANIMA_STYLE_PROMPT.md"
+    base_prompt = "# Anima — exact user-request fidelity\n\nCreate an image that follows the user's requested subject and intent as precisely as possible.\n\n- Treat the user's description as the source of truth. Depict the exact subject, scene, action, setting, and relationships they asked for.\n- Do not replace the requested subject with a different or loosely related idea.\n- Do not add unrelated people, objects, text, logos, speech bubbles, panels, or decorative elements unless requested.\n- Preserve every explicit detail and constraint, including count, placement, perspective, style, mood, time of day, and composition.\n- If the request describes an imaginative or physically impossible scene, depict that imaginative scene faithfully rather than turning it into an ordinary realistic scene.\n- Prefer a clear, coherent composition that makes the requested idea immediately recognizable.\n- Do not invent extra narrative details that compete with the user's main idea.\n- The final image should satisfy the user's actual request, not merely resemble its keywords.\n\n<!-- Add your own private inspiration prompt below this line. -->\n"
+    old_template = "# Anima style / inspiration prompt\\n\\n<!-- Paste your private style prompt below this line. -->\\n"
+    if not private_prompt.exists() or private_prompt.read_text(encoding="utf-8") == old_template:
+        private_prompt.write_text(base_prompt, encoding="utf-8")
 
     spec = importlib.util.spec_from_file_location(
         "prime_ai_engine", files["prime_ai_engine.py"]
