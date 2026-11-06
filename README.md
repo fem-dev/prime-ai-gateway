@@ -25,6 +25,6 @@ The notebook uses a standalone AnyWidget interface instead of Marimo's built-in 
 
 ## Image generation
 
-When Prime AI identifies an image-generation request, the chat offers **Qwen-Image** and **FLUX.1-dev**. The selected model is downloaded on demand, and only one image pipeline is kept active at a time to reduce GPU memory use. FLUX.1-dev requires accepting the model conditions on Hugging Face and authenticating with an account that has access. FLUX.1-dev is under its non-commercial license; review the model card before use.
+When Prime AI identifies an image-generation request, the chat offers **Qwen-Image** and **FLUX.1-dev**. The selected model is downloaded on demand, and only one image pipeline is kept active at a time to reduce GPU memory use. Qwen-Image is downloaded from its model repository. FLUX.1-dev uses the Civitai model version 691639 (full-precision SafeTensor checkpoint) and is loaded with Diffusers `FluxPipeline.from_single_file`. Set the `CIVITAI_TOKEN` environment variable in Molab before requesting FLUX; Civitai requires an API token for model-file downloads. Diffusers may still fetch the pipeline configuration and auxiliary components from the FLUX.1-dev model repository, but the FLUX checkpoint weights come from Civitai. The checkpoint is about 22 GB, so allow enough disk space. FLUX.1-dev is under its non-commercial license; review the model terms before use.
 
 The image-generation flow has not yet been tested in a live Molab runtime.
