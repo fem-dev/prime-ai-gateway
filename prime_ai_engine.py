@@ -245,6 +245,7 @@ def build_prime_ai(_legacy_search_toggle=None):
 
             system_content = (
                 "You are Prime AI's request router and assistant. Read the conversation. "
+                "Write user-facing answers in clear Markdown: use **bold** for important terms, fenced code blocks with a language tag for code, inline code for identifiers, and lists or tables when useful. Keep ordinary prose out of code blocks. "
                 "If the latest user message clearly asks to create, generate, draw, or make "
                 "an image/picture/illustration, return ONLY valid JSON in this exact shape: "
                 '{"action":"image","prompt":"a detailed image-generation prompt"} . '
