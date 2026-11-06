@@ -514,7 +514,8 @@ def build_prime_ai(_legacy_search_toggle=None):
         except Exception as exc:
             prime_chat_widget.status = "خطا: " + str(exc)[-500:]
 
-    prime_chat_widget.observe(_handle_prime_request, names="request")\n    prime_chat_widget.observe(_handle_cancel, names="cancel_request")
+    prime_chat_widget.observe(_handle_prime_request, names="request")
+    prime_chat_widget.observe(_handle_cancel, names="cancel_request")
 
     # Floating Pixel Ghost: the supplied HTML animation runs in an isolated iframe.
     _ghost_html = (Path(__file__).resolve().parent / "pixel_ghost.html").read_text(encoding="utf-8")
