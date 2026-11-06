@@ -120,8 +120,8 @@ def _():
             body = str(item.get("body", "")).strip()
             href = str(item.get("href", "")).strip()
             if title or body:
-                lines.append(f"- {title}\\n  {body}\\n  Source: {href}")
-        return "\\n\\n".join(lines) if lines else "No useful web results were found."
+                lines.append(f"- {title}\n  {body}\n  Source: {href}")
+        return "\n\n".join(lines) if lines else "No useful web results were found."
 
     def ask_qwen(messages):
         model, tokenizer = load_qwen()
@@ -272,7 +272,7 @@ def _():
                         "content": (
                             "Use these web search results to answer the latest question. "
                             "Distinguish facts from uncertainty, include source URLs as plain text, "
-                            "and never invent sources.\\n\\n" + web_results
+                            "and never invent sources.\n\n" + web_results
                         ),
                     }]
                     decision = ask_qwen(enriched_messages)
