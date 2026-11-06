@@ -17,12 +17,26 @@ function render({ model, el }) {
     feed.querySelectorAll("[data-model]").forEach(b=>b.onclick=()=>chooseImageModel(b.dataset.model,history.slice().reverse().find(m=>m.choice)?.prompt));
     area.scrollTop=area.scrollHeight;
   }
-  function chooseImageModel(choice,prompt) {
+  async function chooseImageModel(choice,prompt) {
     if(!busy||!prompt)return;
+    let hfToken="";
+    if(choice==="flux") {
+      const overlay=document.createElement("div");
+      overlay.className="pc-token-overlay";
+      overlay.innerHTML='<form class="pc-token-dialog" dir="rtl"><h3>توکن Hugging Face</h3><p>برای بارگذاری FLUX، توکن معتبر حسابی را وارد کن که دسترسی مدل FLUX.1-dev را دارد. توکن در فایل یا GitHub ذخیره نمی‌شود.</p><input type="password" autocomplete="off" spellcheck="false" placeholder="hf_..." aria-label="Hugging Face token" required><div><button type="button" class="pc-token-cancel">انصراف</button><button type="submit">ادامه</button></div><small>توکن فقط برای همین درخواست به هستهٔ برنامه فرستاده می‌شود.</small></form>';
+      el.querySelector(".pc-shell").appendChild(overlay);
+      const input=overlay.querySelector("input");
+      input.focus();
+      hfToken=await new Promise(resolve=>{
+        overlay.querySelector("form").onsubmit=event=>{event.preventDefault();const value=input.value.trim();overlay.remove();resolve(value);};
+        overlay.querySelector(".pc-token-cancel").onclick=()=>{overlay.remove();resolve("");};
+      });
+      if(!hfToken){busy=false;status("درخواست لغو شد",false);return;}
+    }
     history=history.filter(m=>!m.choice);
     draw();
     status(choice==="flux"?"در حال آماده‌سازی FLUX.1-dev...":"در حال آماده‌سازی Qwen-Image...",true);
-    model.set("request",JSON.stringify({id:rid,text:"",history:history.map(m=>({role:m.role,content:m.content})),attachments:[],image_prompt:prompt,image_model:choice}));
+    model.set("request",JSON.stringify({id:rid,text:"",history:history.map(m=>({role:m.role,content:m.content})),attachments:[],image_prompt:prompt,image_model:choice,hf_token:hfToken}));
     model.save_changes();
   }
   function status(s,thinking) {
