@@ -219,3 +219,130 @@ iframe[title="Pixel Ghost Coder"] {
   main [data-testid*="chat"] {min-height:78vh!important;height:78vh!important}
   iframe[title="Pixel Ghost Coder"] {width:200px!important;height:160px!important;right:2px!important;bottom:2px!important;opacity:.68!important}
 }
+
+
+/* Prime AI: ChatGPT-inspired application shell */
+:root {
+  --prime-bg:#0d0e11;
+  --prime-panel:#15161b;
+  --prime-panel-2:#1b1c22;
+  --prime-border:#292a32;
+  --prime-text:#ececf1;
+  --prime-muted:#92939f;
+  --prime-accent:#b54c65;
+}
+html,body { background:var(--prime-bg)!important; }
+body,main { color:var(--prime-text)!important; }
+main {
+  max-width:1120px!important;
+  margin:0 auto!important;
+  padding:18px 24px 28px!important;
+  background:var(--prime-bg)!important;
+}
+.prime-app-header {
+  direction:rtl;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-height:62px;
+  margin:0 0 16px;
+  padding:0 4px 14px;
+  border-bottom:1px solid var(--prime-border);
+  color:var(--prime-text);
+  font-family:inherit;
+}
+.prime-brand { display:flex;align-items:center;gap:12px; }
+.prime-brand-mark {
+  display:grid;place-items:center;width:38px;height:38px;
+  border:1px solid #61303e;border-radius:13px;
+  background:linear-gradient(145deg,#311923,#171318);
+  color:#f1a9b8;font-size:21px;
+  box-shadow:0 5px 22px #8d30401f;
+}
+.prime-brand strong { display:block;font-size:17px;letter-spacing:.2px; }
+.prime-brand small { display:block;margin-top:2px;color:var(--prime-muted);font-size:11px; }
+.prime-header-status {
+  display:flex;align-items:center;gap:8px;
+  padding:7px 11px;border:1px solid var(--prime-border);
+  border-radius:20px;color:var(--prime-muted);font-size:11px;
+}
+.prime-header-status i {
+  width:7px;height:7px;border-radius:50%;background:#55b98a;
+  box-shadow:0 0 10px #55b98a88;
+}
+/* Style the real chat widget as a full-height conversation canvas. */
+main [data-testid*="chat"], main [class*="chat-container"],
+main [class*="ChatContainer"] {
+  width:100%!important;max-width:100%!important;
+  min-height:calc(100vh - 150px)!important;
+  height:calc(100vh - 150px)!important;
+  display:flex!important;flex-direction:column!important;
+  overflow:hidden!important;
+  border:1px solid var(--prime-border)!important;
+  border-radius:18px!important;
+  background:var(--prime-bg)!important;
+  box-shadow:0 18px 60px #0005!important;
+}
+main [data-testid*="chat"] [class*="message"],
+main [data-testid*="chat"] [class*="Message"] {
+  max-width:820px!important;
+}
+main [data-testid*="chat"] [class*="user"] {
+  border-radius:18px!important;
+}
+main [data-testid*="chat"] [class*="assistant"],
+main [data-testid*="chat"] [class*="Assistant"] {
+  background:transparent!important;
+}
+main [data-testid*="chat"] textarea,
+main [data-testid*="chat"] [contenteditable="true"],
+main [data-testid*="chat"] input {
+  min-height:48px!important;
+  border:1px solid #34353e!important;
+  border-radius:13px!important;
+  background:#1a1b21!important;
+  color:var(--prime-text)!important;
+  padding:13px 16px!important;
+  box-shadow:none!important;
+}
+main [data-testid*="chat"] textarea:focus,
+main [data-testid*="chat"] [contenteditable="true"]:focus {
+  border-color:#8c4053!important;
+  box-shadow:0 0 0 3px #a642591c!important;
+}
+main [data-testid*="chat"] button {
+  border-radius:11px!important;
+}
+main [data-testid*="chat"] button[type="submit"],
+main [data-testid*="chat"] button[aria-label*="Send"],
+main [data-testid*="chat"] button[aria-label*="send"] {
+  background:#9d4058!important;color:white!important;
+  border:1px solid #bd6177!important;
+}
+main [data-testid*="chat"] button[type="submit"]:hover,
+main [data-testid*="chat"] button[aria-label*="Send"]:hover {
+  background:#b34d67!important;
+}
+main [data-testid*="chat"] pre {
+  border-radius:12px!important;
+  border:1px solid #353640!important;
+  background:#090a0d!important;
+}
+main [data-testid*="chat"] :not(pre)>code {
+  border-radius:6px!important;
+}
+main [data-testid*="chat"] a { color:#e89bad!important; }
+main [data-testid*="chat"] hr { border-color:var(--prime-border)!important; }
+main [data-testid*="chat"] [class*="empty"],
+main [data-testid*="chat"] [class*="Empty"] {
+  background:transparent!important;
+}
+@media(max-width:700px) {
+  main { padding:10px 8px 16px!important; }
+  .prime-app-header { min-height:52px;margin-bottom:10px; }
+  main [data-testid*="chat"],main [class*="chat-container"] {
+    min-height:calc(100vh - 118px)!important;
+    height:calc(100vh - 118px)!important;
+    border-radius:14px!important;
+  }
+}
