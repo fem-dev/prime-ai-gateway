@@ -1,6 +1,6 @@
 function render({ model, el }) {
   el.classList.add("prime-chat-widget");
-  el.innerHTML = '<section class="pc-shell" dir="rtl"><header class="pc-top"><div class="pc-brand"><b>✦</b><span><strong>Prime AI</strong><small>گفت‌وگوی هوشمند</small></span></div><div class="pc-tools"><span class="pc-status">● <i>آماده</i></span><button class="pc-new">＋ گفت‌وگوی جدید</button></div></header><main class="pc-scroll"><div class="pc-welcome"><div>◉</div><h2>از کجا شروع کنیم؟</h2><p>هر چیزی می‌خواهی بپرس یا یک فایل برای بررسی بفرست.</p><nav><button data-prompt="سلام! خودت را معرفی کن.">معرفی Prime AI</button><button data-prompt="یک ایده برای پروژه برنامه‌نویسی بده.">ایده برنامه‌نویسی</button><button data-prompt="یک تصویر فانتزی از شهری روی ابرها بساز.">ساخت تصویر</button></nav></div><div class="pc-messages"></div></main><footer><div class="pc-files"></div><div class="pc-compose"><input type="file" class="pc-file" multiple hidden accept="image/*,.pdf,.txt,.md,.csv,.json,.py,.html,.xml,.yaml,.yml"><button class="pc-add" title="افزودن فایل">＋</button><textarea rows="1" placeholder="پیامت را بنویس..."></textarea><button class="pc-send" title="ارسال">➤</button></div><small>Prime AI ممکن است اشتباه کند؛ پاسخ‌های مهم را بررسی کن.</small></footer></section>';
+  el.innerHTML = '<section class="pc-shell" dir="rtl" lang="fa"><header class="pc-top"><div class="pc-brand"><b>✦</b><span><strong>Prime AI</strong><small>گفت‌وگوی هوشمند</small></span></div><div class="pc-tools"><span class="pc-status">● <i>آماده</i></span><button class="pc-new">＋ گفت‌وگوی جدید</button></div></header><main class="pc-scroll"><div class="pc-welcome"><div>◉</div><h2>از کجا شروع کنیم؟</h2><p>هر چیزی می‌خواهی بپرس یا یک فایل برای بررسی بفرست.</p><nav><button data-prompt="سلام! خودت را معرفی کن.">معرفی Prime AI</button><button data-prompt="یک ایده برای پروژه برنامه‌نویسی بده.">ایده برنامه‌نویسی</button><button data-prompt="یک تصویر فانتزی از شهری روی ابرها بساز.">ساخت تصویر</button></nav></div><div class="pc-messages"></div></main><footer><div class="pc-files"></div><div class="pc-compose"><input type="file" class="pc-file" multiple hidden accept="image/*,.pdf,.txt,.md,.csv,.json,.py,.html,.xml,.yaml,.yml"><button class="pc-add" title="افزودن فایل">＋</button><textarea rows="1" placeholder="پیامت را بنویس..."></textarea><button class="pc-stop" title="توقف" hidden>■</button><button class="pc-send" title="ارسال">➤</button></div><small>Prime AI ممکن است اشتباه کند؛ پاسخ‌های مهم را بررسی کن.</small></footer></section>';
   const q=s=>el.querySelector(s), area=q(".pc-scroll"), feed=q(".pc-messages"), input=q("textarea"), file=q(".pc-file");
   let history=[], uploads=[], busy=false, rid=0;
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -20,7 +20,7 @@ function render({ model, el }) {
     q(".pc-status i").textContent=s;
     q(".pc-status").classList.toggle("thinking",!!thinking);
     q(".pc-send").classList.toggle("thinking",!!thinking);
-    q(".pc-send").disabled=!!thinking;
+    q(".pc-send").hidden=!!thinking;\n    q(".pc-stop").hidden=!thinking;
   }
   function drawFiles() {
     q(".pc-files").innerHTML=uploads.map((f,i)=>'<span>📎 '+esc(f.name)+' <button data-i="'+i+'">×</button></span>').join("");
@@ -44,7 +44,7 @@ function render({ model, el }) {
     model.set("request",JSON.stringify({id:rid,text:text,history:history.slice(0,-1).map(m=>({role:m.role,content:m.content})),attachments:files}));
     model.save_changes();
   }
-  q(".pc-send").onclick=send;
+  q(".pc-send").onclick=send;\n  q(".pc-stop").onclick=()=>{if(!busy)return;model.set("cancel_request",String(rid));model.save_changes();busy=false;status("درخواست لغو شد",false);history.push({role:"assistant",content:"درخواست متوقف شد."});draw();};
   input.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}};
   input.oninput=()=>{input.style.height="auto";input.style.height=Math.min(input.scrollHeight,140)+"px";};
   q(".pc-add").onclick=()=>file.click();
@@ -53,7 +53,7 @@ function render({ model, el }) {
   el.querySelectorAll("[data-prompt]").forEach(b=>b.onclick=()=>{input.value=b.dataset.prompt;send();});
   model.on("change:response",()=>{
     let d={};try{d=JSON.parse(model.get("response")||"{}");}catch(e){}
-    if(d.id!==rid)return;
+    if(d.id!==rid||!busy)return;
     if(d.error)history.push({role:"assistant",content:d.error});
     else if(d.text)history.push({role:"assistant",content:d.text,image_data:d.image_data||null});
     draw();busy=false;status("آماده",false);
