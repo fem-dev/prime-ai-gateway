@@ -2,7 +2,7 @@
 from pathlib import Path
 
 
-def build_prime_ai(search_toggle):
+def build_prime_ai():
     # Prime AI: one-cell, single-chat interface with automatic image routing.
     import base64
     import gc
@@ -192,6 +192,8 @@ def build_prime_ai(search_toggle):
                 result = json.loads(match.group(0))
                 if result.get("action") == "image" and result.get("prompt"):
                     return {"action": "image", "prompt": str(result["prompt"])}
+                if result.get("action") == "search" and result.get("query"):
+                    return {"action": "search", "query": str(result["query"])}
                 if result.get("action") == "chat":
                     return {"action": "chat", "response": str(result.get("response", ""))}
             except (json.JSONDecodeError, AttributeError, TypeError):
@@ -280,38 +282,19 @@ def build_prime_ai(search_toggle):
                 if decision.get("action") == "image":
                     return generate_image(decision["prompt"])
 
-            if search_toggle.value:
-                last_user = next(
-                    (
-                        getattr(item, "content", "")
-                        for item in reversed(messages)
-                        if getattr(item, "role", "user") == "user"
-                        and isinstance(getattr(item, "content", ""), str)
-                    ),
-                    "",
-                )
-                if last_user.strip():
-                    try:
-                        web_results = search_web(last_user.strip())
-                    except Exception as search_exc:
-                        # A web-search outage must not take down ordinary chat.
-                        response = decision.get("response", "متوجه درخواستت نشدم.")
-                        return (
-                            response
-                            + "\n\n⚠️ جست‌وجوی وب در دسترس نبود؛ پاسخ بالا بدون نتایج زنده ارائه شد. "
-                            + str(search_exc)[-350:]
-                        )
-                    try:
-                        # Put retrieved context into the system prompt, not after the user turn.
+            if decision.get("action") == "search":
+                query = decision.get("query", "").strip()
+                if not query:
+                    return "عبارت جست‌وجو مشخص نشد؛ لطفاً سؤال را دقیق‌تر بپرس."
+                try:
+                    with mo.status.spinner("Searching..."):
+                        web_results = search_web(query)
                         with state["lock"]:
-                            decision = ask_qwen(messages, web_context=web_results)
-                    except Exception as model_exc:
-                        response = decision.get("response", "متوجه درخواستت نشدم.")
-                        return (
-                            response
-                            + "\n\n⚠️ جست‌وجو انجام شد، اما استفاده از نتایج در پاسخ نهایی ناموفق بود: "
-                            + str(model_exc)[-350:]
-                        )
+                            final = ask_qwen(messages, web_context=web_results)
+                    return final.get("response", "نتیجه‌ای برای پاسخ پیدا نشد.")
+                except Exception as search_exc:
+                    return "جست‌وجوی وب انجام نشد: " + str(search_exc)[-500:]
+
             return decision.get("response", "متوجه درخواستت نشدم.")
         except Exception as exc:
             return "خطا در اجرای Prime AI:\n\n" + str(exc)[-2500:]
@@ -341,15 +324,14 @@ def build_prime_ai(search_toggle):
   sandbox="allow-scripts"
   src="{_ghost_src}"
   allowtransparency="true"
-  style="position:fixed;right:12px;bottom:10px;width:92px;height:72px;
+  style="position:fixed;right:12px;bottom:10px;width:120px;height:94px;
          z-index:1000;border:0;background:transparent!important;
-         color-scheme:normal;overflow:hidden;pointer-events:none;opacity:.48;"
+         color-scheme:normal;overflow:hidden;pointer-events:none;opacity:.56;"
 ></iframe>
 """)
 
     return mo.vstack([
         mo.md("# PRIME AI"),
-        search_toggle,
         chat,
         pixel_ghost,
     ])
