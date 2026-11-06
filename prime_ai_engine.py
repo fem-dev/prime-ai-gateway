@@ -667,6 +667,8 @@ def build_prime_ai(_legacy_search_toggle=None):
             return
         try:
             payload = json.loads(raw)
+            # Clear the synced widget property immediately; keep the token only in this worker's local payload.
+            prime_chat_widget.request = ""
             request_id = str(payload.get("id", "-1"))
             with _request_guard:
                 previous = _active_requests.get(request_id)
