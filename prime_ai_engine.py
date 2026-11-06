@@ -455,9 +455,9 @@ def build_prime_ai(_legacy_search_toggle=None):
   sandbox="allow-scripts"
   src="{_ghost_src}"
   allowtransparency="true"
-  style="position:fixed;right:12px;bottom:10px;width:120px;height:94px;
+  style="position:fixed;right:12px;bottom:10px;width:340px;height:270px;
          z-index:1000;border:0;background:transparent!important;
-         color-scheme:normal;overflow:hidden;pointer-events:none;opacity:.56;"
+         color-scheme:normal;overflow:hidden;pointer-events:none;opacity:.82;"
 ></iframe>
 """)
 
