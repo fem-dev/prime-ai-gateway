@@ -38,29 +38,25 @@ app = marimo.App(width="full", css_file=str(FILES["prime_theme.css"]))
 
 @app.cell
 def _():
+    import importlib.util
     import marimo as mo
 
     search_toggle = mo.ui.checkbox(
         value=False,
         label="🌐 جست‌وجوی وب (استفاده از نتایج اینترنت در پاسخ‌ها)",
     )
-    return (search_toggle,)
-
-
-@app.cell
-def _(search_toggle):
-    import importlib.util
-    import marimo as mo
 
     engine_path = FILES["prime_ai_engine.py"]
     spec = importlib.util.spec_from_file_location("prime_ai_engine", engine_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Could not create an import loader for {engine_path}")
+
     engine = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(engine)
 
     prime_ui = engine.build_prime_ai(search_toggle)
     prime_ui
     return (prime_ui,)
-
 
 if __name__ == "__main__":
     app.run()
