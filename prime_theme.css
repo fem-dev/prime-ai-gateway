@@ -18,31 +18,12 @@ main, [data-testid*="chat"], [class*="chat"] { color:#e9e8e5; }
 .prime-nav-item {padding:9px 10px;border-radius:9px;color:#aeb0bc}
 .prime-nav-item.active {background:#20212b;color:#f4f2ff}
 .prime-sidebar-foot {margin-top:auto;border-top:1px solid #282a34;padding:14px 6px;color:#8c8e9b;font-size:12px}
-.prime-mascot {
- position:fixed;z-index:998;right:18px;bottom:18px;width:190px;padding:12px 10px 10px;
- border:1px solid #2d2d3b;border-radius:17px;background:linear-gradient(160deg,#171823ee,#0d0e14f2);
- box-shadow:0 18px 60px #0009;backdrop-filter:blur(16px);text-align:center;
- color:#b9bac8;font:11px/1.5 ui-monospace,SFMono-Regular,monospace;
-}
-.prime-mascot-head {display:flex;justify-content:space-between;align-items:center;margin:0 2px 5px}
-.prime-live {color:#8fe2b2}.prime-live:before {content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#66e59c;margin-right:6px;box-shadow:0 0 9px #66e59c}
-.prime-pixel {width:160px;height:155px;image-rendering:pixelated;shape-rendering:crispEdges;overflow:visible}
-.prime-arm-left {transform-origin:66px 103px;animation:prime-type-a .34s steps(2,end) infinite}
-.prime-arm-right {transform-origin:103px 103px;animation:prime-type-b .29s steps(2,end) infinite}
-.prime-eye {transform-origin:center;animation:prime-blink 4.2s steps(1,end) infinite}
-.prime-screen {animation:prime-screen 2.4s ease-in-out infinite}
-.prime-spark {animation:prime-float 2.8s ease-in-out infinite}
-@keyframes prime-type-a {0%,100%{transform:rotate(-3deg)}50%{transform:rotate(9deg) translate(2px,2px)}}
-@keyframes prime-type-b {0%,100%{transform:rotate(7deg)}50%{transform:rotate(-8deg) translate(-2px,1px)}}
-@keyframes prime-blink {0%,94%,100%{transform:scaleY(1)}95%,97%{transform:scaleY(.12)}}
-@keyframes prime-screen {0%,100%{opacity:.65}50%{opacity:1}}
-@keyframes prime-float {0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(-5px);opacity:1}}
 textarea,input,[contenteditable="true"] {background:#15161d !important;color:#f0eff7 !important;border-color:#353642 !important;border-radius:13px !important}
 button {transition:background .18s ease,border-color .18s ease,transform .18s ease}
 button:hover {border-color:#8274f5 !important}
-@media(max-width:1050px) {main{margin-left:220px !important;margin-right:18px !important}.prime-mascot{display:none}}
+@media(max-width:1050px) {main{margin-left:220px !important;margin-right:18px !important}}
 @media(max-width:720px) {.prime-sidebar{display:none}main{margin:0 10px !important;padding:8px !important}}
-@media(prefers-reduced-motion:reduce) {.prime-arm-left,.prime-arm-right,.prime-eye,.prime-screen,.prime-spark{animation:none!important}}
+}
 
 /* Global Marimo app theme: keep the notebook canvas and chat readable. */
 :root { color-scheme: dark !important; }
@@ -56,7 +37,7 @@ main {
   width: 100% !important;
   max-width: none !important;
   margin: 0 !important;
-  padding: 26px 230px 36px 250px !important;
+  padding: 26px 24px 36px 250px !important;
 }
 main p, main li, main h1, main h2, main h3, main label,
 main [data-testid*="chat"], main [class*="chat"] {
