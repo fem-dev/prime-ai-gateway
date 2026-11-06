@@ -488,14 +488,28 @@ def build_prime_ai(_legacy_search_toggle=None):
                             or verified_marker.read_text(encoding="utf-8").strip().lower() != expected_sha256
                         ):
                             import hashlib
-                            prime_chat_widget.status = "در حال بررسی سلامت فایل FLUX.1-dev..."
+                            import time
                             digest = hashlib.sha256()
+                            bytes_hashed = 0
+                            last_status_update = 0.0
+                            hash_total = checkpoint.stat().st_size
+                            prime_chat_widget.status = "بررسی سلامت FLUX.1-dev: 0%"
                             with open(checkpoint, "rb") as model_file:
                                 while True:
-                                    chunk = model_file.read(16 * 1024 * 1024)
+                                    # Larger sequential reads reduce Python loop overhead.
+                                    chunk = model_file.read(64 * 1024 * 1024)
                                     if not chunk:
                                         break
                                     digest.update(chunk)
+                                    bytes_hashed += len(chunk)
+                                    now = time.monotonic()
+                                    if now - last_status_update >= 0.5 or bytes_hashed >= hash_total:
+                                        pct = min(100, int(bytes_hashed * 100 / max(1, hash_total)))
+                                        prime_chat_widget.status = (
+                                            f"بررسی سلامت FLUX.1-dev: {pct}% "
+                                            f"({bytes_hashed / 1024**3:.2f}/{hash_total / 1024**3:.2f} GiB)"
+                                        )
+                                        last_status_update = now
                             if digest.hexdigest().lower() != expected_sha256:
                                 checkpoint.unlink(missing_ok=True)
                                 verified_marker.unlink(missing_ok=True)
