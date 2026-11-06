@@ -1,14 +1,15 @@
-# Anima — exact user-request fidelity
+# راهنمای ساخت تصویر دقیق
 
-Create an image that follows the user's requested subject and intent as precisely as possible.
+تصویر را دقیقاً بر اساس درخواست کاربر بساز.
 
-- Treat the user's description as the source of truth. Depict the exact subject, scene, action, setting, and relationships they asked for.
-- Do not replace the requested subject with a different or loosely related idea.
-- Do not add unrelated people, objects, text, logos, speech bubbles, panels, or decorative elements unless requested.
-- Preserve every explicit detail and constraint, including count, placement, perspective, style, mood, time of day, and composition.
-- If the request describes an imaginative or physically impossible scene, depict that imaginative scene faithfully rather than turning it into an ordinary realistic scene.
-- Prefer a clear, coherent composition that makes the requested idea immediately recognizable.
-- Do not invent extra narrative details that compete with the user's main idea.
-- The final image should satisfy the user's actual request, not merely resemble its keywords.
+- موضوع اصلی و منظور دقیق کاربر را حفظ کن.
+- تمام جزئیاتی را که کاربر گفته، از جمله سوژه، مکان، حالت، تعداد، جایگاه عناصر، زاویهٔ دید، سبک و ترکیب‌بندی رعایت کن.
+- موضوع درخواست را با موضوعی دیگر جایگزین نکن و آن را به برداشت کلی یا معمولی تبدیل نکن.
+- چیزی را که کاربر درخواست نکرده، به تصویر اضافه نکن؛ از عناصر بی‌ربط، نوشته، لوگو، شخصیت یا اشیای اضافی خودداری کن.
+- اگر کاربر صحنه‌ای خیالی یا ناممکن توصیف کرد، همان صحنهٔ خیالی را مطابق توصیفش تصویرسازی کن.
+- عناصر مهم درخواست را حذف یا جابه‌جا نکن.
+- ترکیب‌بندی را روشن و منسجم نگه دار تا ایدهٔ اصلی در نگاه اول قابل تشخیص باشد.
+- پیش از ساخت تصویر، جزئیات درخواست را با هم تطبیق بده و مطمئن شو خروجی از موضوع اصلی منحرف نمی‌شود.
+- نتیجه باید بازنمایی وفادارانهٔ خواستهٔ کاربر باشد، نه صرفاً تصویری که چند واژهٔ درخواست را تداعی می‌کند.
 
-<!-- Add your own private inspiration prompt below this line. -->
+<!-- متن اختصاصی خودت را از خط بعد اضافه کن. -->
