@@ -340,7 +340,6 @@ def build_prime_ai(_legacy_search_toggle=None):
             if state["image_pipe"] is None:
                 if not torch.cuda.is_available():
                     raise RuntimeError("برای بارگذاری مدل تصویر، GPU را در تنظیمات Molab فعال کن.")
-                from huggingface_hub import snapshot_download
                 from tqdm.auto import tqdm
                 dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
                 state["image_loading"] = True
@@ -365,13 +364,66 @@ def build_prime_ai(_legacy_search_toggle=None):
                     minimum = 26 if model_choice == "flux" else 22
                     if free_bytes < minimum * 1024**3:
                         raise RuntimeError(f"حافظه آزاد GPU کافی نیست: {free_bytes / 1024**3:.1f} GiB. مدل‌های دیگر را متوقف کن و دوباره تلاش کن.")
-                    prime_chat_widget.status = f"در حال بررسی و دانلود فایل‌های {model_id}..."
-                    local_model = snapshot_download(repo_id=model_id, tqdm_class=WidgetProgress)
-                    prime_chat_widget.status = f"در حال بارگذاری {model_id} روی GPU..."
                     if model_choice == "flux":
+                        import os
+                        import urllib.parse
+                        import urllib.request
+                        token = os.environ.get("CIVITAI_TOKEN", "").strip()
+                        if not token:
+                            raise RuntimeError(
+                                "برای دانلود FLUX از Civitai، کلید API لازم است. متغیر محیطی CIVITAI_TOKEN را در محیط Molab تنظیم کن و کرنل را Restart کن."
+                            )
+                        cache_dir = Path.home() / ".cache" / "prime-ai" / "models"
+                        cache_dir.mkdir(parents=True, exist_ok=True)
+                        checkpoint = cache_dir / "flux1-dev-civitai-691639.safetensors"
+                        if not checkpoint.exists() or checkpoint.stat().st_size < 20_000_000_000:
+                            partial = checkpoint.with_suffix(checkpoint.suffix + ".part")
+                            params = urllib.parse.urlencode({
+                                "type": "Model", "format": "SafeTensor",
+                                "size": "full", "fp": "fp32", "token": token,
+                            })
+                            download_url = "https://civitai.com/api/download/models/691639?" + params
+                            headers = {"User-Agent": "Prime-AI-Molab/1.0"}
+                            offset = partial.stat().st_size if partial.exists() else 0
+                            if offset:
+                                headers["Range"] = f"bytes={offset}-"
+                            request = urllib.request.Request(download_url, headers=headers)
+                            prime_chat_widget.status = "در حال دانلود FLUX.1-dev از Civitai..."
+                            with urllib.request.urlopen(request, timeout=90) as response:
+                                append_mode = offset > 0 and response.status == 206
+                                if offset and not append_mode:
+                                    offset = 0
+                                total_header = response.headers.get("Content-Length")
+                                total_size = (int(total_header) + offset) if total_header else None
+                                written = offset
+                                with open(partial, "ab" if append_mode else "wb") as output_file:
+                                    while True:
+                                        chunk = response.read(8 * 1024 * 1024)
+                                        if not chunk:
+                                            break
+                                        output_file.write(chunk)
+                                        written += len(chunk)
+                                        if total_size:
+                                            pct = min(100, int(written * 100 / total_size))
+                                            prime_chat_widget.status = f"دانلود FLUX.1-dev از Civitai: {pct}%"
+                                        else:
+                                            prime_chat_widget.status = f"دانلود FLUX.1-dev از Civitai: {written / 1024**3:.1f} GiB"
+                            if partial.stat().st_size < 20_000_000_000:
+                                raise RuntimeError(
+                                    f"فایل دریافتی از Civitai ناقص یا غیرمنتظره است ({partial.stat().st_size / 1024**3:.2f} GiB). دانلود کامل نشد."
+                                )
+                            partial.replace(checkpoint)
+                        prime_chat_widget.status = "در حال بارگذاری checkpoint دریافتی از Civitai..."
                         from diffusers import FluxPipeline
-                        pipe = FluxPipeline.from_pretrained(local_model, torch_dtype=dtype, local_files_only=True)
+                        pipe = FluxPipeline.from_single_file(
+                            str(checkpoint),
+                            config="black-forest-labs/FLUX.1-dev",
+                            torch_dtype=dtype,
+                        )
                     else:
+                        from huggingface_hub import snapshot_download
+                        prime_chat_widget.status = f"در حال بررسی و دانلود فایل‌های {model_id}..."
+                        local_model = snapshot_download(repo_id=model_id)
                         from diffusers import DiffusionPipeline
                         pipe = DiffusionPipeline.from_pretrained(local_model, torch_dtype=dtype, local_files_only=True)
                     if hasattr(pipe, "enable_model_cpu_offload"):
