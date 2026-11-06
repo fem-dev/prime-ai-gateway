@@ -398,38 +398,6 @@ cursor:pointer;font-weight:600;">
  <div class="prime-nav-item">▤　پرامپت‌های من</div>
  <div class="prime-sidebar-foot">● سیستم آماده است<br><span style="color:#686b79">Qwen3 · Anima · Web Search</span></div>
 </aside>
-<aside class="prime-mascot">
- <div class="prime-mascot-head"><span>PIXEL ASSISTANT</span><span class="prime-live">ONLINE</span></div>
- <svg class="prime-pixel" viewBox="0 0 160 155" role="img" aria-label="دختر انیمه‌ای پیکسلی در حال تایپ روی لپ‌تاپ">
-  <g class="prime-spark" fill="#9d8cff"><rect x="17" y="30" width="4" height="4"/><rect x="137" y="22" width="5" height="5"/><rect x="126" y="68" width="3" height="3"/></g>
-  <rect x="40" y="131" width="82" height="5" fill="#343447"/>
-  <rect x="51" y="48" width="57" height="54" fill="#38264b"/>
-  <rect x="45" y="57" width="69" height="42" fill="#6d477e"/>
-  <rect x="49" y="53" width="62" height="43" fill="#f2c7b5"/>
-  <rect x="43" y="34" width="72" height="36" fill="#29213e"/>
-  <rect x="37" y="43" width="15" height="42" fill="#29213e"/>
-  <rect x="105" y="40" width="16" height="45" fill="#29213e"/>
-  <rect x="47" y="29" width="60" height="18" fill="#29213e"/>
-  <rect x="54" y="20" width="46" height="15" fill="#29213e"/>
-  <rect x="62" y="16" width="29" height="8" fill="#29213e"/>
-  <rect x="47" y="48" width="10" height="20" fill="#29213e"/>
-  <rect x="103" y="47" width="9" height="23" fill="#29213e"/>
-  <g fill="#f7d5c5"><rect x="58" y="49" width="43" height="36"/><rect x="51" y="60" width="8" height="15"/><rect x="100" y="60" width="8" height="15"/></g>
-  <g fill="#6a4162"><rect x="66" y="62" width="8" height="4"/><rect x="86" y="62" width="8" height="4"/><rect x="76" y="77" width="10" height="3"/></g>
-  <g class="prime-eye" fill="#342344"><rect x="67" y="64" width="5" height="7"/><rect x="87" y="64" width="5" height="7"/></g>
-  <rect x="75" y="72" width="5" height="3" fill="#e58c91"/>
-  <rect x="55" y="84" width="50" height="31" fill="#7463c7"/>
-  <rect x="64" y="89" width="33" height="8" fill="#a99bf0"/>
-  <g class="prime-arm-left"><rect x="52" y="91" width="13" height="24" fill="#f2c7b5"/><rect x="57" y="109" width="13" height="7" fill="#f2c7b5"/></g>
-  <g class="prime-arm-right"><rect x="97" y="91" width="13" height="24" fill="#f2c7b5"/><rect x="99" y="109" width="13" height="7" fill="#f2c7b5"/></g>
-  <rect x="27" y="111" width="106" height="7" fill="#77788f"/>
-  <rect x="35" y="118" width="90" height="25" fill="#252a3d"/>
-  <rect x="41" y="123" width="78" height="14" fill="#414a68"/>
-  <g class="prime-screen" fill="#a5a0ff"><rect x="47" y="126" width="12" height="2"/><rect x="64" y="126" width="23" height="2"/><rect x="92" y="126" width="18" height="2"/><rect x="52" y="132" width="26" height="2"/><rect x="84" y="132" width="17" height="2"/></g>
-  <rect x="71" y="143" width="18" height="3" fill="#626985"/>
- </svg>
- <div>typing code<span class="prime-spark"> ▋</span></div>
-</aside>
 """)
 
     mo.vstack([
