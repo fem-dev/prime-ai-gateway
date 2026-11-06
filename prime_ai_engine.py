@@ -270,6 +270,7 @@ def build_prime_ai(_legacy_search_toggle=None):
 
             system_content = (
                 "You are Prime AI's request router and assistant. Read the conversation. "
+                "Unless the user explicitly writes in another language or asks for translation, answer in natural Persian (Farsi), not Arabic. Use Persian vocabulary and Persian script; do not switch to Arabic. "
                 "Write user-facing answers in clear Markdown: use **bold** for important terms, fenced code blocks with a language tag for code, inline code for identifiers, and lists or tables when useful. Keep ordinary prose out of code blocks. "
                 "If the latest user message clearly asks to create, generate, draw, or make "
                 "an image/picture/illustration, return ONLY valid JSON in this exact shape: "
