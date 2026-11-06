@@ -31,8 +31,3 @@
 .pc-body pre,.pc-body code{direction:ltr;text-align:left;unicode-bidi:plaintext}
 .pc-status i{font-style:normal}
 .pc-status.thinking i:before{content:"";display:none}
-
-.pc-model-choices{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-.pc-model-choices button{display:flex;flex-direction:column;gap:5px;text-align:right;padding:12px 14px;border:1px solid #68404c;border-radius:12px;background:#21171d;color:#f2dce2;cursor:pointer;min-width:210px}
-.pc-model-choices button:hover{border-color:#e28ca2;background:#30202a}
-.pc-model-choices small{font-size:10px;color:#d6a6b3;font-weight:400}
