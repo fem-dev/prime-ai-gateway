@@ -386,14 +386,51 @@ def build_prime_ai(_legacy_search_toggle=None):
                         cache_dir = Path.home() / ".cache" / "prime-ai" / "models"
                         cache_dir.mkdir(parents=True, exist_ok=True)
                         checkpoint = cache_dir / "flux1-dev-civitai-691639.safetensors"
-                        expected_sha256 = "4610115bb0c89560703c892c59ac2742fa821e60ef5871b33493ba544683abd7"
+                        partial = checkpoint.with_suffix(checkpoint.suffix + ".part")
                         verified_marker = checkpoint.with_suffix(checkpoint.suffix + ".sha256")
-                        if not checkpoint.exists() or checkpoint.stat().st_size < 20_000_000_000:
-                            partial = checkpoint.with_suffix(checkpoint.suffix + ".part")
-                            # Civitai model downloads redirect to object storage.
-                            # For this download endpoint, Civitai documents token query
-                            # auth for redirect compatibility; a Bearer header can be
-                            # interpreted incorrectly by the storage host after redirect.
+
+                        # Read the authoritative file size and SHA256 from Civitai's
+                        # model-version API instead of assuming a 20 GB file or a
+                        # hard-coded digest (which can differ by published variant).
+                        import json
+                        metadata_url = "https://civitai.com/api/v1/model-versions/691639"
+                        metadata_request = urllib.request.Request(
+                            metadata_url,
+                            headers={"User-Agent": "Prime-AI-Molab/1.0"},
+                        )
+                        with urllib.request.urlopen(metadata_request, timeout=45) as metadata_response:
+                            version_data = json.loads(metadata_response.read().decode("utf-8"))
+                        model_files = [
+                            item for item in version_data.get("files", [])
+                            if item.get("type") == "Model"
+                            and str(item.get("metadata", {}).get("format", "")).lower() == "safetensor"
+                        ]
+                        if not model_files:
+                            raise RuntimeError(
+                                "در اطلاعات رسمی نسخهٔ Civitai فایل مدل SafeTensor پیدا نشد."
+                            )
+                        selected_file = next(
+                            (item for item in model_files if item.get("primary")),
+                            model_files[0],
+                        )
+                        expected_sha256 = str(
+                            selected_file.get("hashes", {}).get("SHA256", "")
+                        ).lower()
+                        expected_size = int(float(selected_file.get("sizeKB", 0)) * 1024)
+                        if not expected_sha256 or len(expected_sha256) != 64 or expected_size <= 0:
+                            raise RuntimeError(
+                                "Civitai اندازه یا SHA256 معتبر برای فایل مدل برنگرداند."
+                            )
+
+                        if checkpoint.exists() and checkpoint.stat().st_size != expected_size:
+                            checkpoint.unlink()
+                            verified_marker.unlink(missing_ok=True)
+                        if partial.exists() and partial.stat().st_size > expected_size:
+                            partial.unlink()
+
+                        if not checkpoint.exists():
+                            # Civitai's documented download endpoint redirects to
+                            # object storage; use token query auth for redirect compatibility.
                             download_url = (
                                 "https://civitai.com/api/download/models/691639?token="
                                 + urllib.parse.quote(token, safe="")
@@ -411,23 +448,18 @@ def build_prime_ai(_legacy_search_toggle=None):
                             try:
                                 response_context = urllib.request.urlopen(request, timeout=90)
                             except urllib.error.HTTPError as http_error:
-                                # Preserve Civitai's response details so the UI shows
-                                # whether the version ID, permissions, or request was rejected.
                                 try:
                                     error_body = http_error.read(4000).decode("utf-8", errors="replace")
                                 except Exception:
                                     error_body = ""
                                 raise RuntimeError(
                                     f"Civitai رد کرد (HTTP {http_error.code}). "
-                                    "درخواست دانلود Civitai رد شد. "
                                     f"پاسخ سرور: {error_body[:2500] or http_error.reason}"
                                 ) from http_error
                             with response_context as response:
                                 append_mode = offset > 0 and response.status == 206
                                 if offset and not append_mode:
                                     offset = 0
-                                total_header = response.headers.get("Content-Length")
-                                total_size = (int(total_header) + offset) if total_header else None
                                 written = offset
                                 with open(partial, "ab" if append_mode else "wb") as output_file:
                                     while True:
@@ -436,17 +468,25 @@ def build_prime_ai(_legacy_search_toggle=None):
                                             break
                                         output_file.write(chunk)
                                         written += len(chunk)
-                                        if total_size:
-                                            pct = min(100, int(written * 100 / total_size))
-                                            prime_chat_widget.status = f"دانلود FLUX.1-dev از Civitai: {pct}%"
-                                        else:
-                                            prime_chat_widget.status = f"دانلود FLUX.1-dev از Civitai: {written / 1024**3:.1f} GiB"
-                            if partial.stat().st_size < 20_000_000_000:
+                                        pct = min(100, int(written * 100 / expected_size))
+                                        prime_chat_widget.status = (
+                                            f"دانلود FLUX.1-dev از Civitai: {pct}% "
+                                            f"({written / 1024**3:.2f}/{expected_size / 1024**3:.2f} GiB)"
+                                        )
+                            actual_size = partial.stat().st_size
+                            if actual_size != expected_size:
                                 raise RuntimeError(
-                                    f"فایل دریافتی از Civitai ناقص یا غیرمنتظره است ({partial.stat().st_size / 1024**3:.2f} GiB). دانلود کامل نشد."
+                                    "دانلود هنوز کامل نیست: "
+                                    f"{actual_size / 1024**3:.2f} از "
+                                    f"{expected_size / 1024**3:.2f} GiB دریافت شده. "
+                                    "دوباره اجرا کن تا از ادامهٔ دانلود استفاده شود."
                                 )
                             partial.replace(checkpoint)
-                        if not verified_marker.exists() or verified_marker.read_text(encoding="utf-8").strip() != expected_sha256:
+
+                        if (
+                            not verified_marker.exists()
+                            or verified_marker.read_text(encoding="utf-8").strip().lower() != expected_sha256
+                        ):
                             import hashlib
                             prime_chat_widget.status = "در حال بررسی سلامت فایل FLUX.1-dev..."
                             digest = hashlib.sha256()
@@ -456,9 +496,13 @@ def build_prime_ai(_legacy_search_toggle=None):
                                     if not chunk:
                                         break
                                     digest.update(chunk)
-                            if digest.hexdigest() != expected_sha256:
+                            if digest.hexdigest().lower() != expected_sha256:
                                 checkpoint.unlink(missing_ok=True)
-                                raise RuntimeError("هش فایل دانلودشده با نسخهٔ رسمی Civitai مطابقت ندارد؛ فایل حذف شد. دوباره دانلود کن.")
+                                verified_marker.unlink(missing_ok=True)
+                                raise RuntimeError(
+                                    "SHA256 فایل دانلودشده با اطلاعات رسمی Civitai مطابقت ندارد؛ "
+                                    "فایل ناسالم حذف شد. دوباره دانلود کن."
+                                )
                             verified_marker.write_text(expected_sha256, encoding="utf-8")
                         prime_chat_widget.status = "در حال بارگذاری checkpoint دریافتی از Civitai..."
                         from diffusers import FluxPipeline
