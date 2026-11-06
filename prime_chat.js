@@ -6,8 +6,8 @@ function render({ model, el }) {
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   function md(s) {
     let t=esc(s||"");
-    t=t.replace(/```([\w+-]*)\n([\s\S]*?)```/g,(_,lang,code)=>'<pre><label>'+esc(lang||"code")+'</label><button class="pc-copy">کپی</button><code>'+code+'</code></pre>');
-    t=t.replace(/\x60([^\x60]+)\x60/g,"<code>$1</code>").replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/^### (.+)$/gm,"<h3>$1</h3>").replace(/^## (.+)$/gm,"<h2>$1</h2>").replace(/^&gt; (.+)$/gm,"<blockquote>$1</blockquote>").replace(/^[-*] (.+)$/gm,"<li>$1</li>").replace(/\n/g,"<br>");
+    t=t.replace(/```([\\w+-]*)\\n([\\s\\S]*?)```/g,(_,lang,code)=>'<pre><label>'+esc(lang||"code")+'</label><button class="pc-copy">کپی</button><code>'+code+'</code></pre>');
+    t=t.replace(/\x60([^\x60]+)\x60/g,"<code>$1</code>").replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/^### (.+)$/gm,"<h3>$1</h3>").replace(/^## (.+)$/gm,"<h2>$1</h2>").replace(/^&gt; (.+)$/gm,"<blockquote>$1</blockquote>").replace(/^[-*] (.+)$/gm,"<li>$1</li>").replace(/\\n/g,"<br>");
     return t;
   }
   function draw() {
@@ -17,10 +17,14 @@ function render({ model, el }) {
     area.scrollTop=area.scrollHeight;
   }
   function status(s,thinking) {
-    q(".pc-status i").textContent=s;\n    let knife=q(".pc-status .pc-knife");\n    if(thinking && !knife){knife=document.createElement("img");knife.className="pc-knife";knife.src="https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_knife.svg";knife.alt="";q(".pc-status").prepend(knife);}\n    if(!thinking && knife)knife.remove();
+    q(".pc-status i").textContent=s;
+    let knife=q(".pc-status .pc-knife");
+    if(thinking && !knife){knife=document.createElement("img");knife.className="pc-knife";knife.src="https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_knife.svg";knife.alt="";q(".pc-status").prepend(knife);}
+    if(!thinking && knife)knife.remove();
     q(".pc-status").classList.toggle("thinking",!!thinking);
     q(".pc-send").classList.toggle("thinking",!!thinking);
-    q(".pc-send").hidden=!!thinking;\n    q(".pc-stop").hidden=!thinking;
+    q(".pc-send").hidden=!!thinking;
+    q(".pc-stop").hidden=!thinking;
   }
   function drawFiles() {
     q(".pc-files").innerHTML=uploads.map((f,i)=>'<span>📎 '+esc(f.name)+' <button data-i="'+i+'">×</button></span>').join("");
@@ -44,7 +48,8 @@ function render({ model, el }) {
     model.set("request",JSON.stringify({id:rid,text:text,history:history.slice(0,-1).map(m=>({role:m.role,content:m.content})),attachments:files}));
     model.save_changes();
   }
-  q(".pc-send").onclick=send;\n  q(".pc-stop").onclick=()=>{if(!busy)return;model.set("cancel_request",String(rid));model.save_changes();busy=false;status("درخواست لغو شد",false);history.push({role:"assistant",content:"درخواست متوقف شد."});draw();};
+  q(".pc-send").onclick=send;
+  q(".pc-stop").onclick=()=>{if(!busy)return;model.set("cancel_request",String(rid));model.save_changes();busy=false;status("درخواست لغو شد",false);history.push({role:"assistant",content:"درخواست متوقف شد."});draw();};
   input.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}};
   input.oninput=()=>{input.style.height="auto";input.style.height=Math.min(input.scrollHeight,140)+"px";};
   q(".pc-add").onclick=()=>file.click();
