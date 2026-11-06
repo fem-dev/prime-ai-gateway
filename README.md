@@ -36,4 +36,4 @@ The selected model is downloaded on demand. The chat status displays download pr
 
 ### Private Anima prompt
 
-Paste your own style/inspiration prompt into `ANIMA_STYLE_PROMPT.md`, below the marker comment. Prime AI appends that text only to Anima prompts; it is not sent to Qwen-Image. A prompt cannot guarantee that a model will always produce appropriate results. The model selection and download flow has not yet been tested in a live Molab runtime.
+Paste your own style/inspiration prompt into `ANIMA_STYLE_PROMPT.md`, below the marker comment. Prime AI appends that text only to Anima prompts; it is not sent to Qwen-Image. The built-in base prompt is in Persian and focuses only on accurately following the user's request. A prompt cannot guarantee that a model will always produce appropriate results. The model selection and download flow has not yet been tested in a live Molab runtime.
