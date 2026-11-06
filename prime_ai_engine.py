@@ -376,6 +376,8 @@ def build_prime_ai(_legacy_search_toggle=None):
                         cache_dir = Path.home() / ".cache" / "prime-ai" / "models"
                         cache_dir.mkdir(parents=True, exist_ok=True)
                         checkpoint = cache_dir / "flux1-dev-civitai-691639.safetensors"
+                        expected_sha256 = "4610115bb0c89560703c892c59ac2742fa821e60ef5871b33493ba544683abd7"
+                        verified_marker = checkpoint.with_suffix(checkpoint.suffix + ".sha256")
                         if not checkpoint.exists() or checkpoint.stat().st_size < 20_000_000_000:
                             partial = checkpoint.with_suffix(checkpoint.suffix + ".part")
                             params = urllib.parse.urlencode({
@@ -413,6 +415,20 @@ def build_prime_ai(_legacy_search_toggle=None):
                                     f"فایل دریافتی از Civitai ناقص یا غیرمنتظره است ({partial.stat().st_size / 1024**3:.2f} GiB). دانلود کامل نشد."
                                 )
                             partial.replace(checkpoint)
+                        if not verified_marker.exists() or verified_marker.read_text(encoding="utf-8").strip() != expected_sha256:
+                            import hashlib
+                            prime_chat_widget.status = "در حال بررسی سلامت فایل FLUX.1-dev..."
+                            digest = hashlib.sha256()
+                            with open(checkpoint, "rb") as model_file:
+                                while True:
+                                    chunk = model_file.read(16 * 1024 * 1024)
+                                    if not chunk:
+                                        break
+                                    digest.update(chunk)
+                            if digest.hexdigest() != expected_sha256:
+                                checkpoint.unlink(missing_ok=True)
+                                raise RuntimeError("هش فایل دانلودشده با نسخهٔ رسمی Civitai مطابقت ندارد؛ فایل حذف شد. دوباره دانلود کن.")
+                            verified_marker.write_text(expected_sha256, encoding="utf-8")
                         prime_chat_widget.status = "در حال بارگذاری checkpoint دریافتی از Civitai..."
                         from diffusers import FluxPipeline
                         pipe = FluxPipeline.from_single_file(
@@ -423,7 +439,7 @@ def build_prime_ai(_legacy_search_toggle=None):
                     else:
                         from huggingface_hub import snapshot_download
                         prime_chat_widget.status = f"در حال بررسی و دانلود فایل‌های {model_id}..."
-                        local_model = snapshot_download(repo_id=model_id)
+                        local_model = snapshot_download(repo_id=model_id, tqdm_class=WidgetProgress)
                         from diffusers import DiffusionPipeline
                         pipe = DiffusionPipeline.from_pretrained(local_model, torch_dtype=dtype, local_files_only=True)
                     if hasattr(pipe, "enable_model_cpu_offload"):
@@ -435,9 +451,9 @@ def build_prime_ai(_legacy_search_toggle=None):
                     state["image_pipe"] = pipe
                     state["image_model_loaded"] = model_choice
                 except Exception as exc:
-                    if model_choice == "flux" and ("gated" in str(exc).lower() or "401" in str(exc) or "403" in str(exc)):
+                    if model_choice == "flux" and ("401" in str(exc) or "403" in str(exc)):
                         exc = RuntimeError(
-                            "دسترسی FLUX.1-dev در Hugging Face محدود است. ابتدا شرایط مدل را در صفحه رسمی بپذیر و با حساب مجاز وارد شو. "
+                            "دسترسی دانلود رد شد. برای فایل Civitai، CIVITAI_TOKEN معتبر لازم است؛ برای فایل‌های پیکربندی جانبی ممکن است دسترسی مجاز به مخزن رسمی FLUX در Hugging Face هم لازم باشد. "
                             + str(exc)[-900:]
                         )
                     state["image_error"] = str(exc)
