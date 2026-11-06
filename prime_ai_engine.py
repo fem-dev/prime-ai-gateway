@@ -26,6 +26,7 @@ def build_prime_ai(_legacy_search_toggle=None):
             "sentencepiece>=0.2.0",
             "ddgs>=9.0.0",
             "pypdf>=5.0.0",
+            "anywidget>=0.9.18",
         ]
         result = subprocess.run(
             [sys.executable, "-m", "pip", "install", "-q", *packages],
@@ -50,6 +51,19 @@ def build_prime_ai(_legacy_search_toggle=None):
         )
         if install_pdf.returncode != 0:
             print("PDF attachment support unavailable:", (install_pdf.stderr or install_pdf.stdout)[-1000:])
+
+    import importlib.util
+    if importlib.util.find_spec("anywidget") is None:
+        install_widget = subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-q", "anywidget>=0.9.18"],
+            capture_output=True, text=True,
+        )
+        if install_widget.returncode != 0:
+            mo.stop(True, mo.md("نصب anywidget ناموفق بود: " + (install_widget.stderr or install_widget.stdout)[-2000:]))
+    APP_DIRECTORY = Path(__file__).resolve().parent
+    if str(APP_DIRECTORY) not in sys.path:
+        sys.path.insert(0, str(APP_DIRECTORY))
+    from prime_chat_widget import PrimeChatWidget
 
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -390,23 +404,7 @@ def build_prime_ai(_legacy_search_toggle=None):
             # Release per-generation objects before another request can load Qwen.
             del result, image, pipe
 
-            return mo.vstack([
-                mo.md("### تصویرت آماده شد!"),
-                mo.Html(
-                    '<div style="max-width:560px;margin:8px 0;">'
-                    '<img alt="Prime AI generated image" '
-                    'src="data:image/png;base64,' + encoded + '" '
-                    'style="display:block;width:100%;height:auto;border-radius:16px;'
-                    'border:1px solid #34343d;box-shadow:0 12px 40px #0008;">'
-                    '</div>'
-                ),
-                mo.download(
-                    data=image_bytes,
-                    filename="prime-ai-image.png",
-                    mimetype="image/png",
-                    label="دانلود تصویر PNG",
-                ),
-            ])
+            return {"text": "تصویرت آماده شد!", "image_data": "data:image/png;base64," + encoded}
 
     def answer(messages, config):
         try:
@@ -442,18 +440,47 @@ def build_prime_ai(_legacy_search_toggle=None):
     # Models load on demand, not at notebook startup. This keeps the Molab kernel
     # alive and avoids downloading/allocating the image model before the first request.
 
-    chat = mo.ui.chat(
-        answer,
-        prompts=[
-            "سلام! خودت را معرفی کن.",
-            "یک ایده برای پروژه برنامه‌نویسی بده.",
-            "یک تصویر فانتزی از شهری روی ابرها بساز.",
-        ],
-        show_configuration_controls=False,
-        allow_attachments=True,
-    )
+    prime_chat_widget = PrimeChatWidget()
+    prime_chat = mo.ui.anywidget(prime_chat_widget)
 
+    def _handle_prime_request(change):
+        raw = change.get("new", "")
+        if not raw:
+            return
+        request_id = -1
+        try:
+            payload = json.loads(raw)
+            request_id = payload.get("id", -1)
+            history = payload.get("history", [])
+            attachment_objects = []
+            for item in payload.get("attachments", []):
+                data = base64.b64decode(item.get("data", ""), validate=True)
+                if len(data) <= 8 * 1024 * 1024:
+                    attachment_objects.append(SimpleNamespace(
+                        name=str(item.get("name", "attachment")),
+                        filename=str(item.get("name", "attachment")),
+                        content_type=str(item.get("type", "")),
+                        mime_type=str(item.get("type", "")),
+                        data=data, url=None,
+                    ))
+            messages = [
+                SimpleNamespace(role=str(m.get("role", "user")), content=str(m.get("content", "")), attachments=[])
+                for m in history[-23:]
+            ]
+            messages.append(SimpleNamespace(
+                role="user", content=str(payload.get("text", "")), attachments=attachment_objects
+            ))
+            result = answer(messages, {})
+            response_payload = {"id": request_id, **result} if isinstance(result, dict) else {"id": request_id, "text": str(result)}
+            prime_chat_widget.response = json.dumps(response_payload, ensure_ascii=False)
+            prime_chat_widget.status = "آماده"
+        except Exception as exc:
+            prime_chat_widget.response = json.dumps(
+                {"id": request_id, "error": "خطا: " + str(exc)[-1800:]}, ensure_ascii=False
+            )
+            prime_chat_widget.status = "خطا"
 
+    prime_chat_widget.observe(_handle_prime_request, names="request")
 
     # Floating Pixel Ghost: the supplied HTML animation runs in an isolated iframe.
     _ghost_html = (Path(__file__).resolve().parent / "pixel_ghost.html").read_text(encoding="utf-8")
@@ -484,6 +511,6 @@ def build_prime_ai(_legacy_search_toggle=None):
     """)
     return mo.vstack([
         header,
-        chat,
+        prime_chat,
         pixel_ghost,
     ])
