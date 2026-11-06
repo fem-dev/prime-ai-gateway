@@ -365,174 +365,38 @@ def build_prime_ai(_legacy_search_toggle=None):
                     if free_bytes < minimum * 1024**3:
                         raise RuntimeError(f"حافظه آزاد GPU کافی نیست: {free_bytes / 1024**3:.1f} GiB. مدل‌های دیگر را متوقف کن و دوباره تلاش کن.")
                     if model_choice == "flux":
-                        import os
-                        import urllib.parse
-                        import urllib.request
-                        # Civitai credentials stay in the runtime environment; the HF token
-                        # is requested through the password dialog and is never read from files.
-                        token = os.environ.get("CIVITAI_TOKEN", "").strip()
-                        if not token:
-                            raise RuntimeError(
-                                "توکن Civitai در متغیر CIVITAI_TOKEN یا خط اول فایل token.txt پیدا نشد."
-                            )
-                        cache_dir = Path.home() / ".cache" / "prime-ai" / "models"
-                        cache_dir.mkdir(parents=True, exist_ok=True)
-                        checkpoint = cache_dir / "flux1-dev-civitai-691639.safetensors"
-                        partial = checkpoint.with_suffix(checkpoint.suffix + ".part")
-                        verified_marker = checkpoint.with_suffix(checkpoint.suffix + ".sha256")
-
-                        # Read the authoritative file size and SHA256 from Civitai's
-                        # model-version API instead of assuming a 20 GB file or a
-                        # hard-coded digest (which can differ by published variant).
-                        import json
-                        metadata_url = "https://civitai.com/api/v1/model-versions/691639"
-                        metadata_request = urllib.request.Request(
-                            metadata_url,
-                            headers={"User-Agent": "Prime-AI-Molab/1.0"},
-                        )
-                        with urllib.request.urlopen(metadata_request, timeout=45) as metadata_response:
-                            version_data = json.loads(metadata_response.read().decode("utf-8"))
-                        model_files = [
-                            item for item in version_data.get("files", [])
-                            if item.get("type") == "Model"
-                            and str(item.get("metadata", {}).get("format", "")).lower() == "safetensor"
-                        ]
-                        if not model_files:
-                            raise RuntimeError(
-                                "در اطلاعات رسمی نسخهٔ Civitai فایل مدل SafeTensor پیدا نشد."
-                            )
-                        selected_file = next(
-                            (item for item in model_files if item.get("primary")),
-                            model_files[0],
-                        )
-                        expected_sha256 = str(
-                            selected_file.get("hashes", {}).get("SHA256", "")
-                        ).lower()
-                        expected_size = int(float(selected_file.get("sizeKB", 0)) * 1024)
-                        if not expected_sha256 or len(expected_sha256) != 64 or expected_size <= 0:
-                            raise RuntimeError(
-                                "Civitai اندازه یا SHA256 معتبر برای فایل مدل برنگرداند."
-                            )
-
-                        if checkpoint.exists() and checkpoint.stat().st_size != expected_size:
-                            checkpoint.unlink()
-                            verified_marker.unlink(missing_ok=True)
-                        if partial.exists() and partial.stat().st_size > expected_size:
-                            partial.unlink()
-
-                        if not checkpoint.exists():
-                            # Civitai's documented download endpoint redirects to
-                            # object storage; use token query auth for redirect compatibility.
-                            download_url = (
-                                "https://civitai.com/api/download/models/691639?token="
-                                + urllib.parse.quote(token, safe="")
-                            )
-                            headers = {
-                                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
-                                              "AppleWebKit/537.36 (KHTML, like Gecko) "
-                                              "Chrome/131.0.0.0 Safari/537.36",
-                            }
-                            offset = partial.stat().st_size if partial.exists() else 0
-                            if offset:
-                                headers["Range"] = f"bytes={offset}-"
-                            request = urllib.request.Request(download_url, headers=headers)
-                            prime_chat_widget.status = "در حال دانلود FLUX.1-dev از Civitai..."
-                            try:
-                                response_context = urllib.request.urlopen(request, timeout=90)
-                            except urllib.error.HTTPError as http_error:
-                                try:
-                                    error_body = http_error.read(4000).decode("utf-8", errors="replace")
-                                except Exception:
-                                    error_body = ""
-                                raise RuntimeError(
-                                    f"Civitai رد کرد (HTTP {http_error.code}). "
-                                    f"پاسخ سرور: {error_body[:2500] or http_error.reason}"
-                                ) from http_error
-                            with response_context as response:
-                                append_mode = offset > 0 and response.status == 206
-                                if offset and not append_mode:
-                                    offset = 0
-                                written = offset
-                                with open(partial, "ab" if append_mode else "wb") as output_file:
-                                    while True:
-                                        chunk = response.read(8 * 1024 * 1024)
-                                        if not chunk:
-                                            break
-                                        output_file.write(chunk)
-                                        written += len(chunk)
-                                        pct = min(100, int(written * 100 / expected_size))
-                                        prime_chat_widget.status = (
-                                            f"دانلود FLUX.1-dev از Civitai: {pct}% "
-                                            f"({written / 1024**3:.2f}/{expected_size / 1024**3:.2f} GiB)"
-                                        )
-                            actual_size = partial.stat().st_size
-                            if actual_size != expected_size:
-                                raise RuntimeError(
-                                    "دانلود هنوز کامل نیست: "
-                                    f"{actual_size / 1024**3:.2f} از "
-                                    f"{expected_size / 1024**3:.2f} GiB دریافت شده. "
-                                    "دوباره اجرا کن تا از ادامهٔ دانلود استفاده شود."
-                                )
-                            partial.replace(checkpoint)
-
-                        if (
-                            not verified_marker.exists()
-                            or verified_marker.read_text(encoding="utf-8").strip().lower() != expected_sha256
-                        ):
-                            import hashlib
-                            import time
-                            digest = hashlib.sha256()
-                            bytes_hashed = 0
-                            last_status_update = 0.0
-                            hash_total = checkpoint.stat().st_size
-                            prime_chat_widget.status = "بررسی سلامت FLUX.1-dev: 0%"
-                            with open(checkpoint, "rb") as model_file:
-                                while True:
-                                    # Larger sequential reads reduce Python loop overhead.
-                                    chunk = model_file.read(64 * 1024 * 1024)
-                                    if not chunk:
-                                        break
-                                    digest.update(chunk)
-                                    bytes_hashed += len(chunk)
-                                    now = time.monotonic()
-                                    if now - last_status_update >= 0.5 or bytes_hashed >= hash_total:
-                                        pct = min(100, int(bytes_hashed * 100 / max(1, hash_total)))
-                                        prime_chat_widget.status = (
-                                            f"بررسی سلامت FLUX.1-dev: {pct}% "
-                                            f"({bytes_hashed / 1024**3:.2f}/{hash_total / 1024**3:.2f} GiB)"
-                                        )
-                                        last_status_update = now
-                            if digest.hexdigest().lower() != expected_sha256:
-                                checkpoint.unlink(missing_ok=True)
-                                verified_marker.unlink(missing_ok=True)
-                                raise RuntimeError(
-                                    "SHA256 فایل دانلودشده با اطلاعات رسمی Civitai مطابقت ندارد؛ "
-                                    "فایل ناسالم حذف شد. دوباره دانلود کن."
-                                )
-                            verified_marker.write_text(expected_sha256, encoding="utf-8")
-                        prime_chat_widget.status = "در حال بارگذاری checkpoint دریافتی از Civitai..."
-                        from diffusers import FluxPipeline
-                        # Diffusers needs gated FLUX configuration files from Hugging Face.
-                        # The user supplies this token in a password field for this request only.
+                        # Load the official Diffusers-format FLUX.1-dev repository directly from Hugging Face.
                         hf_token = str(hf_token or "").strip()
                         if not hf_token:
-                            raise RuntimeError("برای استفاده از FLUX، توکن Hugging Face را در پنجرهٔ ورود توکن وارد کن.")
-                        try:
-                            pipe = FluxPipeline.from_single_file(
-                                str(checkpoint),
-                                config="black-forest-labs/FLUX.1-dev",
-                                torch_dtype=dtype,
-                                token=hf_token,
+                            raise RuntimeError(
+                                "برای استفاده از FLUX، توکن Hugging Face را در پنجرهٔ ورود توکن وارد کن."
                             )
-                        except Exception as config_error:
-                            error_text = str(config_error)
-                            if "401" in error_text or "gated repo" in error_text.lower() or "restricted" in error_text.lower():
+                        from diffusers import FluxPipeline
+                        from huggingface_hub import snapshot_download
+
+                        prime_chat_widget.status = "در حال دریافت FLUX.1-dev از Hugging Face..."
+                        try:
+                            local_model = snapshot_download(
+                                repo_id=model_id,
+                                token=hf_token,
+                                cache_dir=str(Path.home() / ".cache" / "prime-ai" / "huggingface"),
+                                tqdm_class=WidgetProgress,
+                            )
+                            prime_chat_widget.status = "فایل‌ها دریافت شدند؛ در حال بارگذاری FLUX.1-dev..."
+                            pipe = FluxPipeline.from_pretrained(
+                                local_model,
+                                torch_dtype=dtype,
+                                local_files_only=True,
+                            )
+                        except Exception as hf_error:
+                            error_text = str(hf_error)
+                            if any(term in error_text.lower() for term in ("401", "403", "gated repo", "restricted", "unauthorized")):
                                 raise RuntimeError(
-                                    "دسترسی Hugging Face تأیید نشد. مطمئن شو حساب تو به مخزن "
-                                    "black-forest-labs/FLUX.1-dev دسترسی دارد و توکن معتبر با مجوز خواندن وارد کرده‌ای. "
-                                    "توکن فقط برای همین درخواست استفاده می‌شود و در فایل یا GitHub ذخیره نمی‌شود. "
-                                    "جزئیات: " + error_text[-700:]
-                                ) from config_error
+                                    "دسترسی Hugging Face تأیید نشد. مطمئن شو شرایط مخزن "
+                                    "black-forest-labs/FLUX.1-dev را پذیرفته‌ای و توکن معتبر با مجوز Read وارد کرده‌ای. "
+                                    "توکن فقط برای دریافت مدل استفاده می‌شود و در فایل یا GitHub ذخیره نمی‌شود. "
+                                    "جزئیات: " + error_text[-900:]
+                                ) from hf_error
                             raise
                     else:
                         from huggingface_hub import snapshot_download
@@ -549,11 +413,6 @@ def build_prime_ai(_legacy_search_toggle=None):
                     state["image_pipe"] = pipe
                     state["image_model_loaded"] = model_choice
                 except Exception as exc:
-                    if model_choice == "flux" and ("401" in str(exc) or "403" in str(exc)):
-                        exc = RuntimeError(
-                            "دسترسی دانلود رد شد. برای فایل Civitai، CIVITAI_TOKEN معتبر لازم است؛ برای فایل‌های پیکربندی جانبی ممکن است دسترسی مجاز به مخزن رسمی FLUX در Hugging Face هم لازم باشد. "
-                            + str(exc)[-900:]
-                        )
                     state["image_error"] = str(exc)
                     if pipe is not None:
                         del pipe
