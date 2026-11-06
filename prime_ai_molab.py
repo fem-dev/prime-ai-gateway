@@ -13,6 +13,16 @@ app = marimo.App(width="full", css_file=str(_CSS_PATH) if _CSS_PATH.is_file() el
 
 @app.cell
 def _():
+    # Create the checkbox in its own cell; its value is consumed by the chat cell.
+    search_toggle = marimo.ui.checkbox(
+        value=False,
+        label="🌐 جست‌وجوی وب (استفاده از نتایج اینترنت در پاسخ‌ها)",
+    )
+    return (search_toggle,)
+
+
+@app.cell
+def _():
     # Prime AI: one-cell, single-chat interface with automatic image routing.
     import base64
     import gc
@@ -336,11 +346,6 @@ def _():
     preload_thread = threading.Thread(target=preload_image_model, daemon=True)
     preload_thread.start()
 
-    search_toggle = mo.ui.checkbox(
-        value=False,
-        label="🌐 جست‌وجوی وب (استفاده از نتایج اینترنت در پاسخ‌ها)",
-    )
-
     chat = mo.ui.chat(
         answer,
         prompts=[
@@ -368,8 +373,7 @@ cursor:pointer;font-weight:600;">
       if (document.fullscreenElement) {
         await document.exitFullscreen();
       } else {
-        const target = document.querySelector("main") || document.documentElement;
-        await target.requestFullscreen();
+        await document.documentElement.requestFullscreen();
       }
     } catch (err) {
       btn.textContent = "تمام‌صفحه در این مرورگر پشتیبانی نمی‌شود";
