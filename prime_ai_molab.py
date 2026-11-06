@@ -25,6 +25,9 @@ def _():
         "prime_theme.css": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_theme.css",
         "pixel_ghost.html": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/pixel_ghost.html",
         "PRIME_AI_KNOWLEDGE.md": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/PRIME_AI_KNOWLEDGE.md",
+        "prime_chat_widget.py": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat_widget.py",
+        "prime_chat.js": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat.js",
+        "prime_chat.css": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat.css",
     }
 
     project_dir = Path(tempfile.gettempdir()) / "prime-ai-gateway"
