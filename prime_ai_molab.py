@@ -250,6 +250,39 @@ def _():
         show_configuration_controls=False,
     )
 
+    fullscreen_button = mo.Html("""
+<button id="prime-fullscreen-btn" type="button"
+style="float:right;padding:9px 14px;border:1px solid var(--border-color);
+border-radius:10px;background:var(--surface);color:var(--foreground);
+cursor:pointer;font-weight:600;">
+⛶ نمایش چت تمام‌صفحه
+</button>
+<script>
+(() => {
+  const btn = document.getElementById("prime-fullscreen-btn");
+  if (!btn || btn.dataset.ready) return;
+  btn.dataset.ready = "1";
+  btn.addEventListener("click", async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        const target = document.querySelector("main") || document.documentElement;
+        await target.requestFullscreen();
+      }
+    } catch (err) {
+      btn.textContent = "تمام‌صفحه در این مرورگر پشتیبانی نمی‌شود";
+    }
+  });
+  document.addEventListener("fullscreenchange", () => {
+    btn.textContent = document.fullscreenElement
+      ? "⤢ خروج از تمام‌صفحه"
+      : "⛶ نمایش چت تمام‌صفحه";
+  });
+})();
+</script>
+""")
+
     mo.vstack([
         fullscreen_button,
         mo.md("""
