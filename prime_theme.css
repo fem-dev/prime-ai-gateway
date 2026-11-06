@@ -1,61 +1,112 @@
-:root { color-scheme: dark; }
-html, body { background:#090a0d !important; color:#e9e8e5 !important; }
-body { background:radial-gradient(ellipse at 50% 0%,#171923 0%,#090a0d 58%) fixed !important; }
-main { max-width:1180px !important; margin-left:250px !important; margin-right:230px !important; }
-main, [data-testid*="chat"], [class*="chat"] { color:#e9e8e5; }
-.prime-sidebar {
- position:fixed; z-index:999; inset:0 auto 0 0; width:226px; padding:22px 15px;
- background:rgba(12,13,17,.96); border-right:1px solid #252630;
- display:flex; flex-direction:column; gap:18px; backdrop-filter:blur(18px);
- font:14px/1.45 Inter,ui-sans-serif,system-ui,sans-serif; color:#dedee6;
-}
-.prime-brand {display:flex;align-items:center;gap:10px;font-weight:750;font-size:17px;letter-spacing:.12em}
-.prime-brand-mark {width:30px;height:30px;border-radius:10px;display:grid;place-items:center;
- background:linear-gradient(135deg,#a78bfa,#6d5dfc);color:white;box-shadow:0 0 22px #8b5cf655}
-.prime-new {border:1px solid #383946;border-radius:11px;padding:11px 12px;background:#191a22;color:#f4f3f8;text-align:left}
-.prime-new:hover {border-color:#8b7cff;background:#20212c}
-.prime-nav-label {color:#777987;font-size:11px;letter-spacing:.13em;text-transform:uppercase;padding:3px 8px}
-.prime-nav-item {padding:9px 10px;border-radius:9px;color:#aeb0bc}
-.prime-nav-item.active {background:#20212b;color:#f4f2ff}
-.prime-sidebar-foot {margin-top:auto;border-top:1px solid #282a34;padding:14px 6px;color:#8c8e9b;font-size:12px}
-textarea,input,[contenteditable="true"] {background:#15161d !important;color:#f0eff7 !important;border-color:#353642 !important;border-radius:13px !important}
-button {transition:background .18s ease,border-color .18s ease,transform .18s ease}
-button:hover {border-color:#8274f5 !important}
-@media(max-width:1050px) {main{margin-left:220px !important;margin-right:18px !important}}
-@media(max-width:720px) {.prime-sidebar{display:none}main{margin:0 10px !important;padding:8px !important}}
-}
-
-/* Global Marimo app theme: keep the notebook canvas and chat readable. */
+/* PRIME AI — industrial dark interface */
 :root { color-scheme: dark !important; }
-html, body, #root, .app, main {
-  background: #090a0d !important;
-  color: #e9e8e5 !important;
+html, body, #root, .app {
+  background: #08090b !important;
+  color: #e5e1df !important;
 }
-body { min-width: 320px; }
+body {
+  min-width: 320px;
+  background:
+    radial-gradient(ellipse at 78% 0%, rgba(92,18,31,.16), transparent 38%),
+    #08090b !important;
+}
 main {
   box-sizing: border-box !important;
   width: 100% !important;
   max-width: none !important;
   margin: 0 !important;
-  padding: 26px 24px 36px 250px !important;
+  padding: 28px 30px 42px 252px !important;
+  color: #e5e1df !important;
 }
-main p, main li, main h1, main h2, main h3, main label,
-main [data-testid*="chat"], main [class*="chat"] {
-  color: #e9e8e5;
+main > div { max-width: 1120px; margin-left: auto; margin-right: auto; }
+main h1, main h2, main h3 { color: #f0e8e8 !important; letter-spacing: .045em; }
+main p, main li, main label { color: #b9b0b1 !important; }
+main a { color: #d58a98 !important; }
+.prime-kicker {
+  display:inline-block; margin-top:-8px; color:#a34b5c;
+  font: 10px/1.5 ui-monospace,monospace; letter-spacing:.18em;
 }
+.prime-footer {
+  color:#665c60; font:10px ui-monospace,monospace; letter-spacing:.08em;
+}
+.prime-sidebar {
+  position:fixed; z-index:900; top:0; bottom:0; left:0;
+  box-sizing:border-box; width:224px; padding:26px 16px 18px;
+  display:flex; flex-direction:column; gap:13px;
+  background:linear-gradient(180deg,rgba(13,13,16,.99),rgba(8,9,11,.99));
+  border-right:1px solid #2b171d;
+  color:#d4cacc; font:13px/1.5 ui-sans-serif,system-ui,sans-serif;
+}
+.prime-brand {
+  display:flex; align-items:center; gap:10px; padding:3px 2px 10px;
+  font-weight:850; font-size:16px; letter-spacing:.16em; color:#f0e8e8;
+}
+.prime-brand-mark {
+  width:30px;height:30px;display:grid;place-items:center;
+  border:1px solid #8b293d; background:#210d13;color:#e9a2ae;
+  font:800 14px ui-monospace,monospace;
+  box-shadow:0 0 18px rgba(133,26,48,.18);
+}
+.brand-dim { color:#80545d; }
+.prime-side-rule { height:1px; background:linear-gradient(90deg,#6d2534,transparent); margin:2px 0 8px; }
+.prime-nav-label {
+  margin:7px 6px 0; color:#775b61; font:10px ui-monospace,monospace;
+  letter-spacing:.18em;
+}
+.prime-nav-item {
+  display:flex; align-items:center; gap:9px; min-height:34px;
+  padding:7px 10px; border:1px solid transparent; border-radius:3px;
+  color:#a99b9f; background:rgba(255,255,255,.015);
+}
+.prime-nav-item.active {
+  color:#f0dfe2; background:rgba(103,22,41,.22);
+  border-color:#4c202b;
+}
+.nav-led,.status-led {
+  display:inline-block; width:7px;height:7px;border-radius:50%;
+  background:#a63a4d; box-shadow:0 0 9px #a63a4d;
+}
+.nav-icon { color:#a34b5c; font-size:15px; }
+.nav-state { margin-left:auto; color:#68575b; font:9px ui-monospace,monospace; }
+.prime-side-foot {
+  margin-top:auto; padding:14px 7px 4px; border-top:1px solid #2c1a20;
+  color:#a85a68; font:10px/2 ui-monospace,monospace; letter-spacing:.08em;
+}
+.side-muted { color:#5e5155; }
+.status-led { margin-right:6px; width:6px;height:6px; background:#8d3747; }
 main [data-testid*="chat"], main [class*="chat"] {
-  background-color: #101117 !important;
-  border-color: #292b36 !important;
+  color:#e7dfe1 !important;
+}
+main [data-testid*="chat"] {
+  background:#0d0d11 !important; border:1px solid #342029 !important;
+  border-radius:4px !important; box-shadow:0 14px 44px rgba(0,0,0,.28);
 }
 main textarea, main input, main [contenteditable="true"] {
-  background: #15161d !important;
-  color: #f0eff7 !important;
-  border: 1px solid #353642 !important;
+  background:#111116 !important; color:#f0e8e8 !important;
+  border:1px solid #49303a !important; border-radius:3px !important;
 }
-main button { color: #e9e8e5; }
-@media (max-width: 1050px) {
-  main { padding-left: 240px !important; padding-right: 18px !important; }
+main textarea:focus, main input:focus, main [contenteditable="true"]:focus {
+  border-color:#914052 !important; box-shadow:0 0 0 2px rgba(145,64,82,.13) !important;
 }
-@media (max-width: 720px) {
-  main { padding: 14px 10px 24px !important; }
+main button {
+  color:#e8dfe1 !important; border-radius:3px !important;
+}
+main button:hover { border-color:#a34b5c !important; }
+#prime-fullscreen-btn { transition:all .15s ease; }
+#prime-fullscreen-btn:hover {
+  background:#291018 !important; border-color:#a34b5c !important;
+  box-shadow:0 0 18px rgba(145,35,58,.2);
+}
+iframe[title="Pixel Ghost Coder"] {
+  background:transparent !important; color-scheme:normal !important;
+  border:0 !important; box-shadow:none !important;
+}
+@media(max-width:900px) {
+  .prime-sidebar { width:190px; padding-left:11px; padding-right:11px; }
+  main { padding-left:208px !important; padding-right:18px !important; }
+}
+@media(max-width:650px) {
+  .prime-sidebar { display:none !important; }
+  main { padding:18px 10px 28px !important; }
+  iframe[title="Pixel Ghost Coder"] { width:112px !important;height:86px !important;right:8px !important;bottom:8px !important; }
 }
