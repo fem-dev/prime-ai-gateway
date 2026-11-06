@@ -259,7 +259,13 @@ def build_prime_ai():
                 height=1024,
                 num_inference_steps=28,
                 guidance_scale=4.5,
-                negative_prompt="worst quality, low quality, blurry, jpeg artifacts, chromatic aberration, bad anatomy, extra fingers, missing fingers, deformed hands, text, watermark, unrelated subject, random characters, speech bubbles, comic panel, manga page, classroom",
+                negative_prompt=(
+                    "worst quality, low quality, blurry, jpeg artifacts, chromatic aberration, "
+                    "bad anatomy, extra fingers, missing fingers, deformed hands, text, watermark"
+                    + (", unrelated subject, random characters, speech bubbles, comic panel, manga page, classroom"
+                       if any(term in str(prompt_text).lower() for term in ("floating city", "city above clouds", "sky city", "شهر روی ابر", "شهر آسمانی"))
+                       else "")
+                ),
                 generator=torch.Generator(device="cuda").manual_seed(
                     int(torch.randint(0, 2**31 - 1, (1,)).item())
                 ),
