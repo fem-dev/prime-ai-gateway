@@ -149,7 +149,7 @@ def build_prime_ai():
                 "If the latest user message clearly asks to create, generate, draw, or make "
                 "an image/picture/illustration, return ONLY valid JSON in this exact shape: "
                 '{"action":"image","prompt":"a detailed image-generation prompt"} . '
-                "Translate and expand the user's image idea into a clear visual prompt. "
+                "Translate and expand the image request into a detailed visual prompt. Preserve the exact requested subject, setting, and composition; never substitute an unrelated scene or add characters, classrooms, speech bubbles, captions, or comic panels unless explicitly requested. For a city in the sky, make a floating city above clouds the dominant subject, with architecture, atmosphere, depth, and a cinematic wide composition. "
                 "If current or recent facts, live information, changing prices or versions, or reliable fresh sources are needed, return ONLY JSON with action search and a concise query. "
                 "Otherwise return ONLY valid JSON in this exact shape: "
                 '{"action":"chat","response":"your helpful answer in the user\'s language"}. '
@@ -212,10 +212,25 @@ def build_prime_ai():
                 state["image_error"] = None
                 pipe = None
                 try:
-                    # Official Anima Diffusers distribution uses the modular pipeline.
+                    unload_chat_model()
+                    gc.collect()
+                    torch.cuda.synchronize()
+                    torch.cuda.empty_cache()
+                    free_bytes, total_bytes = torch.cuda.mem_get_info()
+                    if free_bytes < 28 * 1024**3:
+                        raise RuntimeError(
+                            f"حافظه آزاد GPU کافی نیست: {free_bytes / 1024**3:.1f} GiB آزاد از "
+                            f"{total_bytes / 1024**3:.1f} GiB. مدل‌های دیگر را متوقف کن و دوباره تلاش کن."
+                        )
                     pipe = ModularPipeline.from_pretrained(IMAGE_ID)
                     pipe.load_components(dtype=dtype)
-                    state["image_pipe"] = pipe.to("cuda")
+                    if hasattr(pipe, "enable_model_cpu_offload"):
+                        pipe.enable_model_cpu_offload()
+                    elif hasattr(pipe, "enable_sequential_cpu_offload"):
+                        pipe.enable_sequential_cpu_offload()
+                    else:
+                        pipe.to("cuda")
+                    state["image_pipe"] = pipe
                 except Exception as exc:
                     state["image_error"] = str(exc)
                     if pipe is not None:
@@ -239,12 +254,12 @@ def build_prime_ai():
             unload_chat_model()
             pipe = ensure_image_model()
             result = pipe(
-                prompt="masterpiece, best quality, safe, " + str(prompt_text),
-                width=832,
-                height=1216,
-                num_inference_steps=40,
+                prompt="masterpiece, best quality, coherent composition, faithful to the requested subject, " + str(prompt_text),
+                width=768,
+                height=1024,
+                num_inference_steps=28,
                 guidance_scale=4.5,
-                negative_prompt="worst quality, low quality, blurry, jpeg artifacts, chromatic aberration, bad anatomy, extra fingers, missing fingers, deformed hands, text, watermark",
+                negative_prompt="worst quality, low quality, blurry, jpeg artifacts, chromatic aberration, bad anatomy, extra fingers, missing fingers, deformed hands, text, watermark, unrelated subject, random characters, speech bubbles, comic panel, manga page, classroom",
                 generator=torch.Generator(device="cuda").manual_seed(
                     int(torch.randint(0, 2**31 - 1, (1,)).item())
                 ),
@@ -297,6 +312,12 @@ def build_prime_ai():
                     return "جست‌وجوی وب انجام نشد: " + str(search_exc)[-500:]
 
             return decision.get("response", "متوجه درخواستت نشدم.")
+        except torch.cuda.OutOfMemoryError as exc:
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            unload_image_model()
+            return "حافظه GPU هنگام ساخت تصویر کافی نبود. مدل تصویر پاک‌سازی شد؛ کرنل را Restart کن و دوباره تلاش کن.\n\n" + str(exc)[-900:]
         except Exception as exc:
             return "خطا در اجرای Prime AI:\n\n" + str(exc)[-2500:]
 
