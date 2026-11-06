@@ -21,13 +21,13 @@ def _():
 
     # Each project file has its own direct GitHub Raw URL.
     RAW_FILES = {
-        "prime_ai_engine.py": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_ai_engine.py?prime_revision=207b3534942a",
-        "prime_theme.css": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_theme.css?prime_revision=207b3534942a",
-        "pixel_ghost.html": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/pixel_ghost.html?prime_revision=207b3534942a",
-        "PRIME_AI_KNOWLEDGE.md": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/PRIME_AI_KNOWLEDGE.md?prime_revision=207b3534942a",
-        "prime_chat_widget.py": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat_widget.py?prime_revision=207b3534942a",
-        "prime_chat.js": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat.js?prime_revision=207b3534942a",
-        "prime_chat.css": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat.css?prime_revision=207b3534942a",
+        "prime_ai_engine.py": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_ai_engine.py?prime_revision=4256890826b4",
+        "prime_theme.css": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_theme.css?prime_revision=4256890826b4",
+        "pixel_ghost.html": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/pixel_ghost.html?prime_revision=4256890826b4",
+        "PRIME_AI_KNOWLEDGE.md": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/PRIME_AI_KNOWLEDGE.md?prime_revision=4256890826b4",
+        "prime_chat_widget.py": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat_widget.py?prime_revision=4256890826b4",
+        "prime_chat.js": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat.js?prime_revision=4256890826b4",
+        "prime_chat.css": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat.css?prime_revision=4256890826b4",
     }
 
     project_dir = Path(tempfile.gettempdir()) / "prime-ai-gateway"
