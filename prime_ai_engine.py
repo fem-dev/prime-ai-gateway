@@ -42,6 +42,15 @@ def build_prime_ai(_legacy_search_toggle=None):
             )
         INSTALL_MARKER.touch()
 
+    import importlib.util
+    if importlib.util.find_spec("pypdf") is None:
+        install_pdf = subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-q", "pypdf>=5.0.0"],
+            capture_output=True, text=True,
+        )
+        if install_pdf.returncode != 0:
+            print("PDF attachment support unavailable:", (install_pdf.stderr or install_pdf.stdout)[-1000:])
+
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
