@@ -36,3 +36,10 @@
 .pc-model-choices button{display:flex;flex-direction:column;gap:4px;min-width:150px;padding:10px 14px;border:1px solid #754052;border-radius:11px;background:#21151c;color:#f3dce3;cursor:pointer;text-align:right;font-weight:600}
 .pc-model-choices button:hover{background:#35202a;border-color:#c46a80}
 .pc-model-choices small{font-size:10px;color:#aaa;font-weight:400}
+
+
+.pc-token-overlay{position:absolute;inset:0;z-index:50;display:grid;place-items:center;padding:18px;background:rgba(0,0,0,.78);backdrop-filter:blur(5px)}
+.pc-token-dialog{width:min(100%,440px);padding:22px;border:1px solid #48404a;border-radius:16px;background:#15151b;box-shadow:0 20px 70px #000;display:flex;flex-direction:column;gap:12px;color:#eee}
+.pc-token-dialog h3{margin:0;font-size:17px}.pc-token-dialog p,.pc-token-dialog small{margin:0;color:#aaa;font-size:12px;line-height:1.8}
+.pc-token-dialog input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #49434d;border-radius:9px;background:#090a0e;color:#fff;font:13px monospace;direction:ltr;text-align:left}
+.pc-token-dialog>div{display:flex;justify-content:flex-end;gap:8px}.pc-token-dialog button{padding:9px 14px;border:1px solid #59404a;border-radius:8px;background:#281923;color:#f4c4cf;cursor:pointer}.pc-token-dialog button[type=submit]{background:#873f58;color:#fff}
