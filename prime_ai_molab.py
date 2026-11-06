@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.19.0"
-app = marimo.App(width="medium")
+app = marimo.App(width="full", css_file="prime_theme.css")
 
 
 @app.cell
@@ -329,53 +329,6 @@ cursor:pointer;font-weight:600;">
 """)
 
     prime_theme = mo.Html("""
-<style>
-:root { color-scheme: dark; }
-html, body { background:#090a0d !important; color:#e9e8e5 !important; }
-body { background:radial-gradient(ellipse at 50% 0%,#171923 0%,#090a0d 58%) fixed !important; }
-main { max-width:1180px !important; margin-left:250px !important; margin-right:230px !important; }
-main, [data-testid*="chat"], [class*="chat"] { color:#e9e8e5; }
-.prime-sidebar {
- position:fixed; z-index:999; inset:0 auto 0 0; width:226px; padding:22px 15px;
- background:rgba(12,13,17,.96); border-right:1px solid #252630;
- display:flex; flex-direction:column; gap:18px; backdrop-filter:blur(18px);
- font:14px/1.45 Inter,ui-sans-serif,system-ui,sans-serif; color:#dedee6;
-}
-.prime-brand {display:flex;align-items:center;gap:10px;font-weight:750;font-size:17px;letter-spacing:.12em}
-.prime-brand-mark {width:30px;height:30px;border-radius:10px;display:grid;place-items:center;
- background:linear-gradient(135deg,#a78bfa,#6d5dfc);color:white;box-shadow:0 0 22px #8b5cf655}
-.prime-new {border:1px solid #383946;border-radius:11px;padding:11px 12px;background:#191a22;color:#f4f3f8;text-align:left}
-.prime-new:hover {border-color:#8b7cff;background:#20212c}
-.prime-nav-label {color:#777987;font-size:11px;letter-spacing:.13em;text-transform:uppercase;padding:3px 8px}
-.prime-nav-item {padding:9px 10px;border-radius:9px;color:#aeb0bc}
-.prime-nav-item.active {background:#20212b;color:#f4f2ff}
-.prime-sidebar-foot {margin-top:auto;border-top:1px solid #282a34;padding:14px 6px;color:#8c8e9b;font-size:12px}
-.prime-mascot {
- position:fixed;z-index:998;right:18px;bottom:18px;width:190px;padding:12px 10px 10px;
- border:1px solid #2d2d3b;border-radius:17px;background:linear-gradient(160deg,#171823ee,#0d0e14f2);
- box-shadow:0 18px 60px #0009;backdrop-filter:blur(16px);text-align:center;
- color:#b9bac8;font:11px/1.5 ui-monospace,SFMono-Regular,monospace;
-}
-.prime-mascot-head {display:flex;justify-content:space-between;align-items:center;margin:0 2px 5px}
-.prime-live {color:#8fe2b2}.prime-live:before {content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#66e59c;margin-right:6px;box-shadow:0 0 9px #66e59c}
-.prime-pixel {width:160px;height:155px;image-rendering:pixelated;shape-rendering:crispEdges;overflow:visible}
-.prime-arm-left {transform-origin:66px 103px;animation:prime-type-a .34s steps(2,end) infinite}
-.prime-arm-right {transform-origin:103px 103px;animation:prime-type-b .29s steps(2,end) infinite}
-.prime-eye {transform-origin:center;animation:prime-blink 4.2s steps(1,end) infinite}
-.prime-screen {animation:prime-screen 2.4s ease-in-out infinite}
-.prime-spark {animation:prime-float 2.8s ease-in-out infinite}
-@keyframes prime-type-a {0%,100%{transform:rotate(-3deg)}50%{transform:rotate(9deg) translate(2px,2px)}}
-@keyframes prime-type-b {0%,100%{transform:rotate(7deg)}50%{transform:rotate(-8deg) translate(-2px,1px)}}
-@keyframes prime-blink {0%,94%,100%{transform:scaleY(1)}95%,97%{transform:scaleY(.12)}}
-@keyframes prime-screen {0%,100%{opacity:.65}50%{opacity:1}}
-@keyframes prime-float {0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(-5px);opacity:1}}
-textarea,input,[contenteditable="true"] {background:#15161d !important;color:#f0eff7 !important;border-color:#353642 !important;border-radius:13px !important}
-button {transition:background .18s ease,border-color .18s ease,transform .18s ease}
-button:hover {border-color:#8274f5 !important}
-@media(max-width:1050px) {main{margin-left:220px !important;margin-right:18px !important}.prime-mascot{display:none}}
-@media(max-width:720px) {.prime-sidebar{display:none}main{margin:0 10px !important;padding:8px !important}}
-@media(prefers-reduced-motion:reduce) {.prime-arm-left,.prime-arm-right,.prime-eye,.prime-screen,.prime-spark{animation:none!important}}
-</style>
 <aside class="prime-sidebar">
  <div class="prime-brand"><span class="prime-brand-mark">✦</span><span>PRIME AI</span></div>
  <button class="prime-new" type="button">＋　گفت‌وگوی جدید</button>
