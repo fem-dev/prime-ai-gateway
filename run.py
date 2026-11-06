@@ -74,6 +74,7 @@ def _():
     )
     with urllib.request.urlopen(initial_head_request, timeout=20) as response:
         initial_head = json.loads(response.read().decode("utf-8"))["sha"]
+        initial_etag = response.headers.get("ETag", "")
 
     updater = mo.Html(f"""
     <div id="prime-update-status" role="status" aria-live="polite"
@@ -87,6 +88,7 @@ def _():
       if (window.__primeGitHubWatcherStarted) return;
       window.__primeGitHubWatcherStarted = true;
       const knownSha = {json.dumps(initial_head)};
+      const knownEtag = {json.dumps(initial_etag)};
       const status = document.getElementById('prime-update-status');
       let checking = false;
       async function checkForUpdate() {{
@@ -95,8 +97,9 @@ def _():
         try {{
           const response = await fetch(
             'https://api.github.com/repos/fem-dev/prime-ai-gateway/commits/main',
-            {{cache:'no-store', headers:{{'Accept':'application/vnd.github+json'}}}}
+            {{cache:'no-store', headers:{{'Accept':'application/vnd.github+json', 'If-None-Match':knownEtag}}}}
           );
+          if (response.status === 304) return;
           if (!response.ok) throw new Error('GitHub API ' + response.status);
           const data = await response.json();
           if (data.sha && data.sha !== knownSha) {{
