@@ -2,7 +2,7 @@
 from pathlib import Path
 
 
-def build_prime_ai():
+def build_prime_ai(_legacy_search_toggle=None):
     # Prime AI: one-cell, single-chat interface with automatic image routing.
     import base64
     import gc
