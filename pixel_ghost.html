@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pixel Ghost Coder (scary v3)</title>
+<style>
+  html, body { margin: 0; background: transparent; }
+  #ghost-wrap { display: flex; flex-direction: column; align-items: center; }
+  #stage { position: relative; width: min(92vw, 640px); container-type: inline-size; }
+  #ghost { display: block; width: 100%; aspect-ratio: 64 / 48; image-rendering: pixelated; background: transparent; }
+  /* creepy sentence that flashes inside the code window */
+  #glitch-text {
+    position: absolute; left: 68.9%; top: 14.7%; width: 28%; height: 31%;
+    overflow: hidden; display: none; pointer-events: none;
+    font: bold 2cqw/1.3 "Courier New", monospace; color: #39ff88;
+    word-break: break-word; text-transform: uppercase; text-rendering: optimizeSpeed;
+  }
+  #ghost-status { font: bold 15px "Courier New", monospace; color: #7d8f86; letter-spacing: 2px; height: 20px; display: none; }
+</style>
+</head>
+<body>
+<div id="ghost-wrap">
+  <div id="stage">
+    <canvas id="ghost" width="64" height="48"></canvas>
+    <div id="glitch-text"></div>
+  </div>
+  <div id="ghost-status"></div>
+</div>
+<script>
+const SHOW_STATUS = false;   // true = show the creepy caption under the ghost
+
+// ---------- 100 sentences (one is picked at random on every glitch) ----------
+const SENTENCES = [
+  "I see you", "Don't look back", "You shouldn't be here", "I'm still here", "Why wake me?",
+  "It's so cold", "I hear you breathe", "Door's unlocked", "Watching for hours", "Don't close your eyes",
+  "This code isn't yours", "Someone types with me", "I live in the wires", "You can't delete me", "SEGFAULT: no soul",
+  "ERROR 666: guest", "sudo rm -rf /you", "while(alive) watch();", "NULL at your back", "kernel panic: you",
+  "I read your searches", "Turn off the lights", "Check the corner", "The screen sees you", "I was here first",
+  "No one is coming", "Your chair is warm", "I took your shadow", "Feel me near?", "Stay a little longer",
+  "The bug is inside", "Saving is dying", "I moved your files", "Count the footsteps", "Knock. Knock. Knock.",
+  "Don't answer it", "Behind you", "I'm the reflection", "The moon watches", "Window's open",
+  "Who typed that?", "Your name's in my logs", "I remember all", "The dark has a cursor", "Commit. Disappear.",
+  "That line wasn't yours", "Hello? ...Hello?", "Don't trust silence", "I'm right here", "Wake up wake up",
+  "This is my house", "Your screen is cold", "I dream in binary", "01001000 01001001", "Clocks have stopped",
+  "They never found me", "The lamp flickers", "Under the desk", "Close it. I dare you.", "I can't leave. Can you?",
+  "Don't scroll up", "It's alive", "I found what you hid", "Your phone lit up", "Don't turn yet",
+  "The floor creaks", "I was never offline", "The fan is whispering", "The cables are alive", "The room shrank",
+  "Not alone in this file", "The cursor moved itself", "I left a note in code", "Smile. I see you.", "The house breathes",
+  "Time is wrong", "Don't look at the screen", "Waiting in the dark", "Your hands shake", "It's already inside",
+  "No one logs out", "Behind the door", "Every bug has a face", "Keep typing", "Stop when I say",
+  "I am the last process", "Failed to leave", "The walls listen", "You're the last one", "One more line",
+  "Can you see me?", "See you at 3 a.m.", "One more stair", "The mirror blinked", "Can't save this file",
+  "Too late to close", "Don't let it go dark", "I like when you stay", "Don't wake me", "See you in dreams"
+];
+console.assert(SENTENCES.length === 100, 'expected 100 sentences, got ' + SENTENCES.length);
+
+const cv = document.getElementById('ghost'), ctx = cv.getContext('2d');
+const statusEl = document.getElementById('ghost-status'), textEl = document.getElementById('glitch-text');
+if (SHOW_STATUS) statusEl.style.display = 'block';
+ctx.imageSmoothingEnabled = false;
+const tmp = document.createElement('canvas'); tmp.width = 64; tmp.height = 48;
+const tctx = tmp.getContext('2d');
+
+const C = {
+  ghost:'#c9d6cf', shade:'#8fa097', dark:'#5d6b66', void:'#06040a', white:'#f2f6f3',
+  red:'#ff1f3d', redD:'#7a0f20', green:'#39ff88', greenD:'#15663a', cyan:'#00e5ff',
+  slab:'#241a30', slabD:'#150f1e', lapB:'#6b7080', lapL:'#8a8f9e', lapE:'#a9aebd',
+  pBorder:'#3d1620', pBg:'#07090a', pTitle:'#1a0d12'
+};
+const CODE = ['#39ff88','#39ff88','#b6ffcf','#ff2b2b','#8a8f9e'];
+const rnd = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const pick = a => a[rnd(0, a.length - 1)];
+const R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); };
+const ease = x => x * x * (3 - 2 * x);
+
+const rag = Array.from({length: 18}, () => rnd(0, 6));
+const holes = Array.from({length: 7}, () => [rnd(24, 39), rnd(20, 26)]);
+
+// timeline in frames @30fps
+const T_THINK = 25, T_OPEN = 55, T_TYPE = 100, T_HAPPY = 480, T_CLOSE = 540, T_SLEEP = 585, T_LOOP = 700;
+let t = 0, lines = [], parts = [];
+let gl = { left: 0, power: 1 };                       // glitch burst
+let txt = { s: '', age: 0, life: 0, red: false, last: -1 };  // flashing sentence
+
+function newLine() {
+  const ind = pick([0, 2, 2, 4]);
+  lines.push({ ind, px: [], target: rnd(4, 14 - ind), word: rnd(2, 4), col: pick(CODE) });
+  if (lines.length > 40) lines.shift();
+}
+function typeTick() {
+  let cur = lines[lines.length - 1];
+  if (cur.px.length >= cur.target) { newLine(); cur = lines[lines.length - 1]; }
+  if (cur.word <= 0) { cur.px.push(null); cur.word = rnd(2, 4); cur.col = pick(CODE); }
+  else { cur.px.push(cur.col); cur.word--; }
+}
+function openness() {
+  if (t < T_OPEN) return 0;
+  if (t < T_TYPE) return ease((t - T_OPEN) / (T_TYPE - T_OPEN));
+  if (t < T_CLOSE) return 1;
+  if (t < T_SLEEP) return 1 - ease((t - T_CLOSE) / (T_SLEEP - T_CLOSE));
+  return 0;
+}
+function stateOf() {
+  if (t < T_THINK) return ['idle', 'watching you...'];
+  if (t < T_OPEN) return ['think', 'listening...'];
+  if (t < T_TYPE) return ['open', 'opening the laptop'];
+  if (t < T_HAPPY) return ['type', 'typing' + '.'.repeat((t >> 4) % 4)];
+  if (t < T_CLOSE) return ['happy', 'hehehehe'];
+  if (t < T_SLEEP) return ['close', 'see you soon'];
+  return ['sleep', '...still here'];
+}
+
+// ---------- drawing ----------
+function tear(n) {            // slice the finished frame into bands and shove them sideways
+  for (let k = 0; k < n; k++) {
+    const y = rnd(0, 44), hh = rnd(1, 4), sh = rnd(-9, 9);
+    tctx.clearRect(0, 0, 64, 48);
+    tctx.drawImage(cv, 0, y, 64, hh, 0, 0, 64, hh);
+    ctx.clearRect(0, y, 64, hh);
+    ctx.drawImage(tmp, 0, 0, 64, hh, sh, y, 64, hh);
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, 64, 48);
+  const o = openness(), [st, msg] = stateOf();
+  const typing = st === 'type', happy = st === 'happy', sleep = st === 'sleep', think = st === 'think';
+  if (SHOW_STATUS && statusEl.textContent !== msg) statusEl.textContent = msg;
+  if (t % 241 === 0) return;                             // one-frame blackout
+
+  const glitch = gl.left > 0, pw = gl.power;
+  const flicker = (t % 113) < 2 || (glitch && Math.random() < 0.3);
+  const jy = glitch ? rnd(-1, 1) * pw : 0;
+  const by = (sleep ? 2 : Math.round(Math.sin(t * 0.06))) + jy;
+  const twitch = (t % 170) < 3 ? 1 : 0;
+  const stare = glitch || (typing && (t % 150) > 120) || think;
+  const laugh = happy ? rnd(-1, 1) : 0;
+  const hx = twitch + laugh + (glitch ? rnd(-2, 2) * pw : 0);
+  const rowS = []; for (let y = 8; y <= 26; y++) rowS[y] = glitch && Math.random() < 0.55 ? rnd(-3, 3) * pw : 0;
+
+  // body (chromatic split first, then the real body)
+  if (glitch && !sleep) {
+    [[-2 * pw, C.red], [2 * pw, C.cyan]].forEach(([dx, col]) => {
+      ctx.globalAlpha = 0.45;
+      for (let y = 8; y <= 26; y++) {
+        const i = y - 8, x0 = i === 0 ? 27 : i === 1 ? 25 : i < 4 ? 24 : 23, x1 = 63 - x0;
+        R(x0 + dx + rowS[y], y + by, x1 - x0 + 1, 1, col);
+      }
+    });
+  }
+  ctx.globalAlpha = sleep ? 0.12 : flicker ? 0.4 : 0.86;
+  for (let y = 8; y <= 26; y++) {
+    const i = y - 8, x0 = i === 0 ? 27 : i === 1 ? 25 : i < 4 ? 24 : 23, x1 = 63 - x0, s = rowS[y];
+    R(x0 + s, y + by, x1 - x0 + 1, 1, C.ghost);
+    R(x0 + s, y + by, 2, 1, C.shade);
+    R(x1 - 1 + s, y + by, 2, 1, C.shade);
+  }
+  for (let x = 23; x <= 40; x++) {
+    const sway = Math.round(Math.sin((x + t * 0.12) * 0.7));
+    const bot = 27 + rag[x - 23] + sway, s = glitch ? rnd(-2, 2) * pw : 0;
+    R(x + s, 27 + by, 1, Math.max(1, bot - 27), x % 3 === 0 ? C.shade : C.ghost);
+    R(x + s, bot + by, 1, 1, C.dark);
+  }
+  holes.forEach(([x, y]) => R(x, y + by, 1, 1, C.dark));
+  R(26, 10 + by, 2, 1, C.white); R(25, 11 + by, 1, 2, C.shade);
+  R(22, 21 + by, 2, 8, C.shade); R(40, 21 + by, 2, 8, C.shade);
+  R(21, 28, 2, 4, C.shade); R(41, 28, 2, 4, C.shade);
+  ctx.globalAlpha = 1;
+
+  // face
+  const oy = by + (sleep ? 1 : 0);
+  const H = (x, y, w, h, c) => R(x + hx, y + oy, w, h, c);
+  const eyeBlink = (t % 210) < 4 && !stare;
+  const eyeCol = glitch ? pick([C.red, C.cyan, C.white]) : sleep ? (((t >> 4) % 2) ? C.red : C.redD) : C.red;
+  const big = stare || happy ? 1 : 0;
+  const px = typing && !stare ? 0 : Math.round(Math.sin(t * 0.05));
+  const py = typing && !stare ? 1 : 0;
+  if (eyeBlink) { H(27, 16, 4, 1, C.void); H(34, 16, 4, 1, C.void); }
+  else {
+    if (!sleep) {
+      H(27 - big, 13 - big, 4 + big * 2, 5 + big * 2, C.void);
+      H(34 - big, 14 - big, 4 + big * 2, 4 + big * 2, C.void);
+      H(28, 18 + big, 2, 1, C.shade); H(35, 18 + big, 2, 1, C.shade);
+    }
+    const core = stare ? C.white : eyeCol;
+    H(28 + px, 15 + py, 2, 2, eyeCol); H(35 + px, 15 + py, 1, 2, eyeCol);
+    H(28 + px, 15 + py, 1, 1, core);   H(35 + px, 15 + py, 1, 1, core);
+  }
+  if (!sleep) {
+    if (happy || glitch) {                               // wide screaming maw
+      H(29, 19, 8, glitch ? rnd(4, 6) : 4, C.void);
+      for (let i = 0; i < 8; i += 2) { H(29 + i, 19, 1, 1, C.white); H(30 + i, 22, 1, 1, C.white); }
+    } else if (typing) {
+      H(30, 19, 6, 2, C.void);
+      H(31, 19, 1, 1, C.white); H(33, 19, 1, 1, C.white); H(35, 19, 1, 1, C.white);
+      H(32, 20, 1, 1, C.white); H(34, 20, 1, 1, C.white);
+    } else H(31, 20, 3, 1, C.void);
+  }
+
+  // ledge + laptop
+  R(18, 34, 28, 2, C.slab); R(18, 36, 28, 1, C.slabD);
+  if (o > 0) R(25, 34, 14, 1, o < 1 ? C.greenD : (glitch && Math.random() < .5 ? C.red : C.green));
+  R(24, 33, 16, 1, C.lapB);
+  const h = Math.max(1, Math.round(o * 9));
+  R(26, 33 - h, 12, h, C.lapL); R(26, 33 - h, 12, 1, C.lapE);
+  if (h >= 5) R(31, 33 - (h >> 1) - 1, 2, 2, (t / 12 | 0) % 2 ? C.redD : C.red);
+
+  // clawed fingers
+  for (let i = 0; i < 4; i++) {
+    const dl = typing && (((t / 2 | 0) + i) % 4 === 0) ? 1 : 0;
+    const dr = typing && (((t / 2 | 0) + i + 2) % 4 === 0) ? 1 : 0;
+    R(21 + i, 30 + dl, 1, 2, C.shade); R(21 + i, 32 + dl, 1, 1, C.void);
+    R(38 + i, 30 + dr, 1, 2, C.shade); R(38 + i, 32 + dr, 1, 1, C.void);
+  }
+
+  // terminal window (code is hidden while a sentence is flashing)
+  if (o >= 0.5 && !flicker) {
+    R(43, 4, 20, 19, glitch ? pick([C.red, C.pBorder]) : C.pBorder);
+    R(44, 5, 18, 17, txt.life > 0 ? '#12060a' : C.pBg); R(44, 5, 18, 2, C.pTitle);
+    R(45, 5, 1, 1, C.red); R(47, 5, 1, 1, C.redD); R(49, 5, 1, 1, C.redD);
+    if (txt.life <= 0) {
+      const vis = lines.slice(-6);
+      vis.forEach((ln, i) => {
+        const y = 8 + 2 * i; R(45, y, 1, 1, '#2a3a31');
+        ln.px.forEach((c, j) => { if (c) R(47 + ln.ind + j, y, 1, 1, glitch && i % 2 === 0 ? C.red : c); });
+      });
+      const last = vis[vis.length - 1];
+      if (typing && ((t >> 3) % 2 === 0)) R(47 + last.ind + last.px.length, 8 + 2 * (vis.length - 1), 1, 1, C.white);
+    }
+  }
+
+  // particles
+  parts.forEach(p => {
+    if (p.k === 'bit') R(p.x, p.y, 1, 2, p.life % 6 < 3 ? C.green : C.greenD);
+    else if (p.k === 'ember') { if (p.life > 10 || (t >> 1) % 2) R(p.x, p.y, 1, 1, pick([C.red, C.redD, '#ff6a3d'])); }
+    else R(p.x, p.y, 2, 1, C.dark);
+  });
+
+  // whole-frame corruption
+  if (glitch) {
+    tear(3 + 2 * pw);
+    for (let k = 0; k < 5 * pw; k++) R(rnd(0, 60), rnd(0, 46), rnd(1, 5), 1, pick([C.red, C.cyan, C.white, C.void]));
+  }
+}
+
+// ---------- the flashing sentence ----------
+const NOISE = '#@%&$?!/\\|<>~^*';
+function updateText() {
+  if (txt.life <= 0 || openness() < 0.5) { textEl.style.display = 'none'; return; }
+  const s = txt.s.toUpperCase(), n = s.length;
+  let out = '';
+  const reveal = Math.min(n, Math.floor(txt.age * n / 9));       // decodes in ~0.3s
+  for (let i = 0; i < n; i++) {
+    const dying = txt.life < 7 && Math.random() < 0.45;          // corrupts right before vanishing
+    out += (i < reveal && !dying) || s[i] === ' ' ? s[i] : NOISE[rnd(0, NOISE.length - 1)];
+  }
+  const g = gl.left > 0;
+  textEl.textContent = out;
+  textEl.style.display = 'block';
+  textEl.style.color = txt.red ? '#ff2b2b' : '#39ff88';
+  textEl.style.opacity = (g || txt.life < 7) && Math.random() < 0.3 ? 0.35 : 1;
+  textEl.style.transform = g || txt.life < 7 ? `translate(${rnd(-3, 3)}px, ${rnd(-2, 2)}px)` : 'none';
+  textEl.style.textShadow = g
+    ? `${rnd(-3, 3)}px 0 #ff1f3d, ${rnd(-3, 3)}px 0 #00e5ff`
+    : `0 0 4px ${txt.red ? '#ff1f3d' : '#39ff88'}`;
+}
+
+// ---------- logic ----------
+function startGlitch() {
+  gl.left = rnd(10, 20);
+  gl.power = Math.random() < 0.3 ? 2 : 1;                         // sometimes a mega-glitch
+  if (openness() >= 1 && txt.life <= 0) {                         // panel is open -> show a random sentence
+    let i; do { i = rnd(0, SENTENCES.length - 1); } while (i === txt.last);
+    txt = { s: SENTENCES[i], age: 0, life: rnd(47, 65), red: Math.random() < 0.4, last: i };
+  }
+}
+function update() {
+  t++;
+  if (t >= T_LOOP) { t = 0; lines = []; newLine(); parts = []; gl.left = 0; txt.life = 0; }
+  const st = stateOf()[0];
+  if (gl.left > 0) gl.left--;
+  if (txt.life > 0) { txt.life--; txt.age++; }
+  else if (gl.left === 0) {
+    const p = st === 'type' ? 1 / 50 : st === 'happy' ? 1 / 35 : 1 / 200;
+    if (Math.random() < p) startGlitch();
+  }
+  if (st === 'type') {
+    if (t % 2 === 0) typeTick();
+    if (t % 7 === 0) parts.push({ k: 'bit', x: rnd(18, 46), y: 32, vx: 0, life: 55 });
+  }
+  if (st === 'happy' && t % 3 === 0) parts.push({ k: 'ember', x: rnd(20, 42), y: rnd(10, 28), vx: 0, life: 28 });
+  if (st === 'sleep' && t % 40 === 0) parts.push({ k: 'whisper', x: rnd(20, 40), y: 30, vx: 0, life: 40 });
+  parts.forEach(p => { p.x += p.vx || 0; p.y -= 0.2; p.life--; });
+  parts = parts.filter(p => p.life > 0);
+}
+
+newLine();
+let last = 0;
+function loop(ts) {
+  if (ts - last >= 33) { last = ts; update(); draw(); updateText(); }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
