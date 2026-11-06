@@ -184,3 +184,38 @@ iframe[title="Pixel Ghost Coder"] {
     right:0 !important;bottom:0 !important;opacity:.72 !important;
   }
 }
+
+
+/* Prime AI chat refresh + pixel loader (neutralized red accents). */
+:root { --prime-loader: url("data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20200%20200%22%20width%3D%22200%22%20height%3D%22200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%3E%0A%3Crect%20x%3D%2296%22%20y%3D%2230%22%20width%3D%228%22%20height%3D%228%22%20fill%3D%22%23c0c0c0%22%2F%3E%3Crect%20x%3D%2296%22%20y%3D%2238%22%20width%3D%228%22%20height%3D%228%22%20fill%3D%22%23d8d8d8%22%2F%3E%3Crect%20x%3D%2292%22%20y%3D%2246%22%20width%3D%2212%22%20height%3D%228%22%20fill%3D%22%23c0c0c0%22%2F%3E%3Crect%20x%3D%2292%22%20y%3D%2254%22%20width%3D%2212%22%20height%3D%228%22%20fill%3D%22%23d8d8d8%22%2F%3E%3Crect%20x%3D%2292%22%20y%3D%2262%22%20width%3D%2212%22%20height%3D%228%22%20fill%3D%22%23c0c0c0%22%2F%3E%3Crect%20x%3D%2288%22%20y%3D%2270%22%20width%3D%2216%22%20height%3D%228%22%20fill%3D%22%23b0b0b0%22%2F%3E%3Crect%20x%3D%2288%22%20y%3D%2278%22%20width%3D%2216%22%20height%3D%228%22%20fill%3D%22%23c8c8c8%22%2F%3E%0A%3Crect%20x%3D%2296%22%20y%3D%2222%22%20width%3D%228%22%20height%3D%228%22%20fill%3D%22%23aeb8c0%22%2F%3E%3Crect%20x%3D%2292%22%20y%3D%2226%22%20width%3D%224%22%20height%3D%224%22%20fill%3D%22%2389959e%22%2F%3E%3Crect%20x%3D%22100%22%20y%3D%2226%22%20width%3D%224%22%20height%3D%224%22%20fill%3D%22%23aeb8c0%22%2F%3E%3Crect%20x%3D%2296%22%20y%3D%2218%22%20width%3D%224%22%20height%3D%224%22%20fill%3D%22%2389959e%22%2F%3E%3Crect%20x%3D%22100%22%20y%3D%2220%22%20width%3D%224%22%20height%3D%224%22%20fill%3D%22%23687680%22%2F%3E%3Crect%20x%3D%2292%22%20y%3D%2238%22%20width%3D%224%22%20height%3D%224%22%20fill%3D%22%23aeb8c0%22%2F%3E%3Crect%20x%3D%22104%22%20y%3D%2246%22%20width%3D%224%22%20height%3D%224%22%20fill%3D%22%2389959e%22%2F%3E%3Crect%20x%3D%2292%22%20y%3D%2250%22%20width%3D%224%22%20height%3D%224%22%20fill%3D%22%23aeb8c0%22%2F%3E%0A%3Crect%20x%3D%2284%22%20y%3D%2286%22%20width%3D%2232%22%20height%3D%228%22%20fill%3D%22%23888888%22%2F%3E%3Crect%20x%3D%2284%22%20y%3D%2286%22%20width%3D%2232%22%20height%3D%224%22%20fill%3D%22%23aaaaaa%22%2F%3E%3Crect%20x%3D%2292%22%20y%3D%2294%22%20width%3D%2216%22%20height%3D%228%22%20fill%3D%22%235c3a1e%22%2F%3E%3Crect%20x%3D%2292%22%20y%3D%22102%22%20width%3D%2216%22%20height%3D%228%22%20fill%3D%22%237a4e2d%22%2F%3E%3Crect%20x%3D%2292%22%20y%3D%22110%22%20width%3D%2216%22%20height%3D%228%22%20fill%3D%22%235c3a1e%22%2F%3E%3Crect%20x%3D%2292%22%20y%3D%22118%22%20width%3D%2216%22%20height%3D%228%22%20fill%3D%22%237a4e2d%22%2F%3E%3Crect%20x%3D%2296%22%20y%3D%2298%22%20width%3D%224%22%20height%3D%224%22%20fill%3D%22%23aaaaaa%22%2F%3E%3Crect%20x%3D%22100%22%20y%3D%2298%22%20width%3D%224%22%20height%3D%224%22%20fill%3D%22%23888888%22%2F%3E%3Crect%20x%3D%2296%22%20y%3D%22114%22%20width%3D%224%22%20height%3D%224%22%20fill%3D%22%23aaaaaa%22%2F%3E%3Crect%20x%3D%22100%22%20y%3D%22114%22%20width%3D%224%22%20height%3D%224%22%20fill%3D%22%23888888%22%2F%3E%3Crect%20x%3D%2288%22%20y%3D%22126%22%20width%3D%2224%22%20height%3D%228%22%20fill%3D%22%23666666%22%2F%3E%3Crect%20x%3D%2292%22%20y%3D%22134%22%20width%3D%2216%22%20height%3D%226%22%20fill%3D%22%23888888%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+main [data-testid*="chat"] {
+  min-height:78vh !important;height:78vh !important;
+  border-radius:16px !important;border:1px solid #38232c !important;
+  background:linear-gradient(160deg,#111116 0%,#0a0a0e 68%,#100b10 100%) !important;
+  box-shadow:0 18px 55px #0007,inset 0 1px #ffffff08 !important;
+  overflow:hidden !important;
+}
+main [data-testid*="chat"] button { border-radius:9px !important;transition:background .18s ease,border-color .18s ease !important; }
+main [data-testid*="chat"] button:hover { background:#24151c !important;border-color:#a34b5c !important; }
+main [data-testid*="chat"] button:disabled {
+  position:relative !important;color:transparent !important;opacity:1 !important;
+  min-width:42px !important;min-height:38px !important;background:#25151c !important;border:1px solid #9c4359 !important;
+}
+main [data-testid*="chat"] button:disabled > * { opacity:0 !important; }
+main [data-testid*="chat"] button:disabled::after {
+  content:"";position:absolute;inset:5px;background-image:var(--prime-loader);
+  background-position:center;background-repeat:no-repeat;background-size:contain;
+  image-rendering:pixelated;animation:prime-knife-spin .85s steps(12,end) infinite;
+}
+@keyframes prime-knife-spin { from {transform:rotate(0deg)} to {transform:rotate(360deg)} }
+main [data-testid*="chat"] pre,main [data-testid*="chat"] pre code {direction:ltr!important;text-align:left!important}
+main [data-testid*="chat"] [class*="empty"] svg,
+main [data-testid*="chat"] [class*="Empty"] svg,
+main [data-testid*="chat"] [aria-label*="No messages"] svg {opacity:0!important}
+iframe[title="Pixel Ghost Coder"] {
+  width:290px!important;height:230px!important;right:6px!important;bottom:4px!important;opacity:.76!important;
+}
+@media(max-width:650px) {
+  main [data-testid*="chat"] {min-height:78vh!important;height:78vh!important}
+  iframe[title="Pixel Ghost Coder"] {width:200px!important;height:160px!important;right:2px!important;bottom:2px!important;opacity:.68!important}
+}
