@@ -21,7 +21,7 @@ def _():
 
     # Each project file has its own direct GitHub Raw URL.
     RAW_FILES = {
-        "prime_ai_engine.py": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_ai_engine.py",
+        "prime_ai_engine.py": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_ai_engine.py?v=d053262fbea9b451e208184c70f097fd49c30f90",
         "prime_theme.css": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_theme.css",
         "pixel_ghost.html": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/pixel_ghost.html",
         "PRIME_AI_KNOWLEDGE.md": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/PRIME_AI_KNOWLEDGE.md",
@@ -38,7 +38,7 @@ def _():
     for filename, url in RAW_FILES.items():
         try:
             request = urllib.request.Request(
-                url, headers={"User-Agent": "Prime-AI-Molab"}
+                url, headers={"User-Agent": "Prime-AI-Molab", "Cache-Control": "no-cache", "Pragma": "no-cache"}
             )
             with urllib.request.urlopen(request, timeout=45) as response:
                 content = response.read()
