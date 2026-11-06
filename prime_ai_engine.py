@@ -403,7 +403,21 @@ def build_prime_ai(_legacy_search_toggle=None):
                                 headers["Range"] = f"bytes={offset}-"
                             request = urllib.request.Request(download_url, headers=headers)
                             prime_chat_widget.status = "در حال دانلود FLUX.1-dev از Civitai..."
-                            with urllib.request.urlopen(request, timeout=90) as response:
+                            try:
+                                response_context = urllib.request.urlopen(request, timeout=90)
+                            except urllib.error.HTTPError as http_error:
+                                # Preserve Civitai's response details so the UI shows
+                                # whether the version ID, permissions, or request was rejected.
+                                try:
+                                    error_body = http_error.read(4000).decode("utf-8", errors="replace")
+                                except Exception:
+                                    error_body = ""
+                                raise RuntimeError(
+                                    f"Civitai رد کرد (HTTP {http_error.code}). "
+                                    f"آدرس درخواست: {download_url}. "
+                                    f"پاسخ سرور: {error_body[:2500] or http_error.reason}"
+                                ) from http_error
+                            with response_context as response:
                                 append_mode = offset > 0 and response.status == 206
                                 if offset and not append_mode:
                                     offset = 0
