@@ -471,8 +471,19 @@ def build_prime_ai(_legacy_search_toggle=None):
 ></iframe>
 """)
 
+    # Branded shell around the chat surface. The chat transport remains
+    # Marimo's supported chat widget so attachments and Python callbacks work.
+    header = mo.Html("""
+    <header class="prime-app-header" dir="rtl">
+      <div class="prime-brand">
+        <span class="prime-brand-mark">✦</span>
+        <div><strong>Prime AI</strong><small>مساعدك الذكي</small></div>
+      </div>
+      <div class="prime-header-status"><i></i><span>آماده</span></div>
+    </header>
+    """)
     return mo.vstack([
-        mo.md("# PRIME AI"),
+        header,
         chat,
         pixel_ghost,
     ])
