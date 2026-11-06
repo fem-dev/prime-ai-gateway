@@ -23,3 +23,17 @@ Enable a GPU in Molab before sending chat or image requests. The first request m
 ## Custom chat UI
 
 The notebook now uses a standalone AnyWidget interface instead of Marimo's built-in chat component. The component is split across `prime_chat_widget.py`, `prime_chat.js`, and `prime_chat.css`. The loader fetches these files from GitHub Raw, and the Python engine connects the widget request/response traits to the existing model and routing functions. The custom interface includes a conversation view, message composer, file upload, Markdown/code display, generated image display, and new-chat action. A live Molab runtime test is still required.
+
+
+## Image model selection
+
+When Prime AI routes a request to image generation, the chat asks the user to choose between:
+
+- **Anima** — may produce unexpected or unsuitable results.
+- **Qwen-Image** — may be less effective for some prompts.
+
+The selected model is downloaded on demand. The chat status displays download progress and the current loading stage. Only one image pipeline is kept active at a time to reduce GPU memory use.
+
+### Private Anima prompt
+
+Paste your own style/inspiration prompt into `ANIMA_STYLE_PROMPT.md`, below the marker comment. Prime AI appends that text only to Anima prompts; it is not sent to Qwen-Image. A prompt cannot guarantee that a model will always produce appropriate results. The model selection and download flow has not yet been tested in a live Molab runtime.
