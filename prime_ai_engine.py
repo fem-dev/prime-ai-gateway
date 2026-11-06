@@ -329,28 +329,7 @@ def build_prime_ai(search_toggle):
         show_configuration_controls=False,
     )
 
-    fullscreen_button = mo.Html("""
-<button id="prime-fullscreen-btn" type="button"
-  onclick="(async function(){const b=this;try{if(document.fullscreenElement){await document.exitFullscreen();}else{await document.documentElement.requestFullscreen();}b.textContent=document.fullscreenElement?'⤢ خروج از تمام‌صفحه':'⛶ تمام‌صفحه';}catch(e){b.textContent='برای تمام‌صفحه از F11 استفاده کن';}}).call(this)"
-  style="display:block;margin:0 0 14px auto;padding:10px 16px;
-  border:1px solid #5b202b;border-radius:8px;background:#160d12;
-  color:#f3dfe3;cursor:pointer;font-weight:700;letter-spacing:.02em;">
-  ⛶ تمام‌صفحه
-</button>
-""")
 
-    prime_theme = mo.Html("""
-<aside class="prime-sidebar" aria-label="Prime AI status panel">
- <div class="prime-brand"><span class="prime-brand-mark">P</span><span>PRIME<span class="brand-dim"> / AI</span></span></div>
- <div class="prime-side-rule"></div>
- <div class="prime-nav-label">SYSTEM</div>
- <div class="prime-nav-item active"><span class="nav-led"></span> هسته گفت‌وگو</div>
- <div class="prime-nav-label">CAPABILITIES</div>
- <div class="prime-nav-item"><span class="nav-icon">⌕</span> جست‌وجوی وب <span class="nav-state">اختیاری</span></div>
- <div class="prime-nav-item"><span class="nav-icon">▧</span> تولید تصویر <span class="nav-state">درخواستی</span></div>
- <div class="prime-side-foot"><span class="status-led"></span> KERNEL IDLE<br><span class="side-muted">QWEN3 · ANIMA · LOCAL</span></div>
-</aside>
-""")
 
     # Floating Pixel Ghost: the supplied HTML animation runs in an isolated iframe.
     _ghost_html = (Path(__file__).resolve().parent / "pixel_ghost.html").read_text(encoding="utf-8")
@@ -362,23 +341,15 @@ def build_prime_ai(search_toggle):
   sandbox="allow-scripts"
   src="{_ghost_src}"
   allowtransparency="true"
-  style="position:fixed;right:18px;bottom:22px;width:148px;height:112px;
+  style="position:fixed;right:12px;bottom:10px;width:92px;height:72px;
          z-index:1000;border:0;background:transparent!important;
-         color-scheme:normal;overflow:hidden;pointer-events:none;"
+         color-scheme:normal;overflow:hidden;pointer-events:none;opacity:.48;"
 ></iframe>
 """)
 
     return mo.vstack([
-        prime_theme,
-        pixel_ghost,
-        fullscreen_button,
-        mo.md("""
-# PRIME AI
-<span class="prime-kicker">LOCAL INFERENCE SYSTEM / SESSION ACTIVE</span>
-
-یک پیام بفرست. درخواست ساخت تصویر به‌صورت خودکار تشخیص داده می‌شود.
-"""),
+        mo.md("# PRIME AI"),
         search_toggle,
         chat,
-        mo.md("---\n<span class=\"prime-footer\">PRIME AI / LOCAL MODE · مدل‌ها هنگام نیاز بارگذاری می‌شوند.</span>"),
+        pixel_ghost,
     ])
