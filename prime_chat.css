@@ -30,4 +30,4 @@
 .pc-body{direction:rtl;text-align:right;unicode-bidi:plaintext}
 .pc-body pre,.pc-body code{direction:ltr;text-align:left;unicode-bidi:plaintext}
 .pc-status i{font-style:normal}
-.pc-status.thinking i:before{content:"";display:none}\n.pc-status .pc-knife{width:22px;height:22px;object-fit:contain;vertical-align:middle;display:inline-block;margin-inline-end:7px;animation:pcspin .8s linear infinite;filter:drop-shadow(0 0 5px #a12b46)}
+.pc-status.thinking i:before{content:"";display:none}
