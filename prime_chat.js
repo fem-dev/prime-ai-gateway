@@ -12,9 +12,18 @@ function render({ model, el }) {
   }
   function draw() {
     q(".pc-welcome").hidden=history.length>0;
-    feed.innerHTML=history.map(m=>'<article class="pc-msg '+m.role+'"><span class="pc-avatar">'+(m.role==="user"?"ش":"✦")+'</span><div class="pc-body">'+md(m.content)+(m.image_data?'<img alt="تصویر تولیدشده" src="'+m.image_data+'"><a class="pc-download" download="prime-ai-image.png" href="'+m.image_data+'">دانلود تصویر</a>':"")+(m.files&&m.files.length?'<div class="pc-filechips">'+m.files.map(n=>'<span>📎 '+esc(n)+'</span>').join("")+'</div>':"")+'</div></article>').join("");
+    feed.innerHTML=history.map(m=>'<article class="pc-msg '+m.role+'"><span class="pc-avatar">'+(m.role==="user"?"ش":"✦")+'</span><div class="pc-body">'+md(m.content)+(m.image_data?'<img alt="تصویر تولیدشده" src="'+m.image_data+'"><a class="pc-download" download="prime-ai-image.png" href="'+m.image_data+'">دانلود تصویر</a>':"")+(m.choice?'<div class="pc-model-choices"><button data-model="qwen">Qwen-Image <small>مدل تصویرساز Qwen</small></button><button data-model="flux">FLUX.1-dev <small>مدل تصویرساز Flux</small></button></div>':"")+(m.files&&m.files.length?'<div class="pc-filechips">'+m.files.map(n=>'<span>📎 '+esc(n)+'</span>').join("")+'</div>':"")+'</div></article>').join("");
     feed.querySelectorAll(".pc-copy").forEach(b=>b.onclick=()=>{navigator.clipboard?.writeText(b.parentElement.querySelector("code").textContent);b.textContent="کپی شد";});
+    feed.querySelectorAll("[data-model]").forEach(b=>b.onclick=()=>chooseImageModel(b.dataset.model,history.findLast(m=>m.choice)?.prompt));
     area.scrollTop=area.scrollHeight;
+  }
+  function chooseImageModel(choice,prompt) {
+    if(!busy||!prompt)return;
+    history=history.filter(m=>!m.choice);
+    draw();
+    status(choice==="flux"?"در حال آماده‌سازی FLUX.1-dev...":"در حال آماده‌سازی Qwen-Image...",true);
+    model.set("request",JSON.stringify({id:rid,text:"",history:history.map(m=>({role:m.role,content:m.content})),attachments:[],image_prompt:prompt,image_model:choice}));
+    model.save_changes();
   }
   function status(s,thinking) {
     q(".pc-status i").textContent=s;
@@ -57,8 +66,9 @@ function render({ model, el }) {
     let d={};try{d=JSON.parse(model.get("response")||"{}");}catch(e){}
     if(d.id!==rid||!busy)return;
     if(d.error)history.push({role:"assistant",content:d.error});
+    else if(d.choose_image_model)history.push({role:"assistant",content:d.text||"مدل تصویرساز را انتخاب کن:",choice:true,prompt:d.prompt||""});
     else if(d.text)history.push({role:"assistant",content:d.text,image_data:d.image_data||null});
-    draw();busy=false;status("آماده",false);
+    draw();busy=!!d.choose_image_model;status(d.choose_image_model?"انتخاب مدل تصویر":"آماده",!!d.choose_image_model);
   });
   model.on("change:status",()=>{if(busy)status(model.get("status")||"در حال پردازش...",true);});
 }
