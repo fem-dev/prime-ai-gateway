@@ -64,11 +64,59 @@ def _():
     spec.loader.exec_module(engine)
     prime_ui = engine.build_prime_ai(search_toggle)
 
+    # Poll the GitHub main-branch head every 5 seconds. When it changes,
+    # reload the notebook so the one-cell loader fetches all fresh Raw files.
+    import json
+
+    initial_head_request = urllib.request.Request(
+        "https://api.github.com/repos/fem-dev/prime-ai-gateway/commits/main",
+        headers={"Accept": "application/vnd.github+json", "User-Agent": "Prime-AI-Molab"},
+    )
+    with urllib.request.urlopen(initial_head_request, timeout=20) as response:
+        initial_head = json.loads(response.read().decode("utf-8"))["sha"]
+
+    updater = mo.Html(f"""
+    <div id="prime-update-status" role="status" aria-live="polite"
+         style="position:fixed;top:12px;right:12px;z-index:999999;display:none;
+                padding:8px 14px;border:1px solid #7f1d1d;border-radius:8px;
+                background:#090909;color:#ff5555;font:600 13px monospace;">
+      updating....
+    </div>
+    <script>
+    (() => {{
+      if (window.__primeGitHubWatcherStarted) return;
+      window.__primeGitHubWatcherStarted = true;
+      const knownSha = {json.dumps(initial_head)};
+      const status = document.getElementById('prime-update-status');
+      let checking = false;
+      async function checkForUpdate() {{
+        if (checking || document.hidden) return;
+        checking = true;
+        try {{
+          const response = await fetch(
+            'https://api.github.com/repos/fem-dev/prime-ai-gateway/commits/main',
+            {{cache:'no-store', headers:{{'Accept':'application/vnd.github+json'}}}}
+          );
+          if (!response.ok) throw new Error('GitHub API ' + response.status);
+          const data = await response.json();
+          if (data.sha && data.sha !== knownSha) {{
+            status.style.display = 'block';
+            setTimeout(() => window.location.reload(), 1200);
+          }}
+        }} catch (error) {{
+          console.warn('Prime AI update check failed:', error);
+        }} finally {{ checking = false; }}
+      }}
+      setInterval(checkForUpdate, 5000);
+    }})();
+    </script>
+    """)
+
     # Apply the stylesheet fetched from its own Raw URL.
     css_text = files["prime_theme.css"].read_text(encoding="utf-8")
     style = mo.Html(f"<style>{css_text}</style>")
 
-    mo.vstack([style, prime_ui])
+    mo.vstack([updater, style, prime_ui])
     return
 
 
