@@ -226,12 +226,6 @@ def build_prime_ai(search_toggle):
                     state["image_loading"] = False
             return state["image_pipe"]
 
-    def preload_image_model():
-        try:
-            ensure_image_model()
-            print("Prime AI: Anima آماده است.")
-        except Exception as exc:
-            print("Prime AI: بارگذاری اولیه Z-Anime ناموفق بود:", str(exc)[-2000:])
 
     def generate_image(prompt_text):
         if not torch.cuda.is_available():
@@ -322,9 +316,8 @@ def build_prime_ai(search_toggle):
         except Exception as exc:
             return "خطا در اجرای Prime AI:\n\n" + str(exc)[-2500:]
 
-    # Start downloading and importing the anime model as soon as this app cell runs.
-    preload_thread = threading.Thread(target=preload_image_model, daemon=True)
-    preload_thread.start()
+    # Models load on demand, not at notebook startup. This keeps the Molab kernel
+    # alive and avoids downloading/allocating the image model before the first request.
 
     chat = mo.ui.chat(
         answer,
@@ -338,49 +331,24 @@ def build_prime_ai(search_toggle):
 
     fullscreen_button = mo.Html("""
 <button id="prime-fullscreen-btn" type="button"
-style="float:right;padding:9px 14px;border:1px solid var(--border-color);
-border-radius:10px;background:var(--surface);color:var(--foreground);
-cursor:pointer;font-weight:600;">
-⛶ نمایش چت تمام‌صفحه
+  onclick="(async function(){const b=this;try{if(document.fullscreenElement){await document.exitFullscreen();}else{await document.documentElement.requestFullscreen();}b.textContent=document.fullscreenElement?'⤢ خروج از تمام‌صفحه':'⛶ تمام‌صفحه';}catch(e){b.textContent='برای تمام‌صفحه از F11 استفاده کن';}}).call(this)"
+  style="display:block;margin:0 0 14px auto;padding:10px 16px;
+  border:1px solid #5b202b;border-radius:8px;background:#160d12;
+  color:#f3dfe3;cursor:pointer;font-weight:700;letter-spacing:.02em;">
+  ⛶ تمام‌صفحه
 </button>
-<script>
-(() => {
-  const btn = document.getElementById("prime-fullscreen-btn");
-  if (!btn || btn.dataset.ready) return;
-  btn.dataset.ready = "1";
-  btn.addEventListener("click", async () => {
-    try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      } else {
-        await document.documentElement.requestFullscreen();
-      }
-    } catch (err) {
-      btn.textContent = "تمام‌صفحه در این مرورگر پشتیبانی نمی‌شود";
-    }
-  });
-  document.addEventListener("fullscreenchange", () => {
-    btn.textContent = document.fullscreenElement
-      ? "⤢ خروج از تمام‌صفحه"
-      : "⛶ نمایش چت تمام‌صفحه";
-  });
-})();
-</script>
 """)
 
     prime_theme = mo.Html("""
-<aside class="prime-sidebar">
- <div class="prime-brand"><span class="prime-brand-mark">✦</span><span>PRIME AI</span></div>
- <button class="prime-new" type="button">＋　گفت‌وگوی جدید</button>
- <div class="prime-nav-label">Workspace</div>
- <div class="prime-nav-item active">◈　چت هوشمند</div>
- <div class="prime-nav-item">⌕　جست‌وجوی وب</div>
- <div class="prime-nav-item">▧　ساخت تصویر</div>
- <div class="prime-nav-label">Recent</div>
- <div class="prime-nav-item">✧　ایده‌های خلاقانه</div>
- <div class="prime-nav-item">⌘　پروژه‌های کدنویسی</div>
- <div class="prime-nav-item">▤　پرامپت‌های من</div>
- <div class="prime-sidebar-foot">● سیستم آماده است<br><span style="color:#686b79">Qwen3 · Anima · Web Search</span></div>
+<aside class="prime-sidebar" aria-label="Prime AI status panel">
+ <div class="prime-brand"><span class="prime-brand-mark">P</span><span>PRIME<span class="brand-dim"> / AI</span></span></div>
+ <div class="prime-side-rule"></div>
+ <div class="prime-nav-label">SYSTEM</div>
+ <div class="prime-nav-item active"><span class="nav-led"></span> هسته گفت‌وگو</div>
+ <div class="prime-nav-label">CAPABILITIES</div>
+ <div class="prime-nav-item"><span class="nav-icon">⌕</span> جست‌وجوی وب <span class="nav-state">اختیاری</span></div>
+ <div class="prime-nav-item"><span class="nav-icon">▧</span> تولید تصویر <span class="nav-state">درخواستی</span></div>
+ <div class="prime-side-foot"><span class="status-led"></span> KERNEL IDLE<br><span class="side-muted">QWEN3 · ANIMA · LOCAL</span></div>
 </aside>
 """)
 
@@ -393,9 +361,10 @@ cursor:pointer;font-weight:600;">
   aria-label="Pixel Ghost Coder animated assistant"
   sandbox="allow-scripts"
   src="{_ghost_src}"
-  style="position:fixed;right:14px;bottom:86px;width:164px;height:126px;
-         z-index:1000;border:0;background:transparent;overflow:hidden;
-         pointer-events:none;"
+  allowtransparency="true"
+  style="position:fixed;right:18px;bottom:22px;width:148px;height:112px;
+         z-index:1000;border:0;background:transparent!important;
+         color-scheme:normal;overflow:hidden;pointer-events:none;"
 ></iframe>
 """)
 
@@ -404,19 +373,12 @@ cursor:pointer;font-weight:600;">
         pixel_ghost,
         fullscreen_button,
         mo.md("""
-# ✦ PRIME AI
-### یک چت هوشمند برای گفت‌وگو و ساخت تصویر
+# PRIME AI
+<span class="prime-kicker">LOCAL INFERENCE SYSTEM / SESSION ACTIVE</span>
 
-همه‌چیز از همین کادر چت انجام می‌شود:
-- **Qwen3-32B (BF16)** برای گفت‌وگو و تشخیص درخواست ساخت تصویر
-- **Anima 2B (BF16)** برای تولید تخصصی تصویر انیمه
-- **جست‌وجوی وب** با فعال‌کردن گزینه مربوط، برای افزودن نتایج اینترنت به پاسخ‌ها
-- **فایل دانش پروژه** از PRIME_AI_KNOWLEDGE.md برای اطلاعات و دستورالعمل‌های اختصاصی
-
-فقط درخواست ساخت تصویرت را در چت بنویس؛ Prime AI تشخیص می‌دهد و تصویر را همان‌جا در گفت‌وگو نمایش می‌دهد.
-برای اجرای مدل‌ها GPU را در تنظیمات Molab فعال کن. بار اول، وزن‌های عمومی مدل‌ها بدون API Key یا توکن Hugging Face دانلود می‌شوند. فایل PRIME_AI_KNOWLEDGE.md را کنار فایل برنامه نگه دار و برای افزودن اطلاعات اختصاصی ویرایش کن.
+یک پیام بفرست. درخواست ساخت تصویر به‌صورت خودکار تشخیص داده می‌شود.
 """),
         search_toggle,
         chat,
-        mo.md("---\nPrime AI · یک سلول، یک چت، دو مدل محلی."),
+        mo.md("---\n<span class=\"prime-footer\">PRIME AI / LOCAL MODE · مدل‌ها هنگام نیاز بارگذاری می‌شوند.</span>"),
     ])
