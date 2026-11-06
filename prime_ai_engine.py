@@ -370,8 +370,18 @@ def build_prime_ai(_legacy_search_toggle=None):
                         import urllib.request
                         token = os.environ.get("CIVITAI_TOKEN", "").strip()
                         if not token:
+                            token_files = (APP_DIRECTORY / "token.txt", Path.cwd() / "token.txt")
+                            for token_file in token_files:
+                                try:
+                                    if token_file.is_file():
+                                        token = token_file.read_text(encoding="utf-8").strip()
+                                        if token:
+                                            break
+                                except OSError:
+                                    continue
+                        if not token:
                             raise RuntimeError(
-                                "برای دانلود FLUX از Civitai، کلید API لازم است. متغیر محیطی CIVITAI_TOKEN را در محیط Molab تنظیم کن و کرنل را Restart کن."
+                                "کلید Civitai پیدا نشد. توکن را در فایل token.txt کنار فایل‌های Prime AI قرار بده."
                             )
                         cache_dir = Path.home() / ".cache" / "prime-ai" / "models"
                         cache_dir.mkdir(parents=True, exist_ok=True)
@@ -382,10 +392,13 @@ def build_prime_ai(_legacy_search_toggle=None):
                             partial = checkpoint.with_suffix(checkpoint.suffix + ".part")
                             params = urllib.parse.urlencode({
                                 "type": "Model", "format": "SafeTensor",
-                                "size": "full", "fp": "fp32", "token": token,
+                                "size": "full", "fp": "fp32",
                             })
                             download_url = "https://civitai.com/api/download/models/691639?" + params
-                            headers = {"User-Agent": "Prime-AI-Molab/1.0"}
+                            headers = {
+                                "User-Agent": "Prime-AI-Molab/1.0",
+                                "Authorization": "Bearer " + token,
+                            }
                             offset = partial.stat().st_size if partial.exists() else 0
                             if offset:
                                 headers["Range"] = f"bytes={offset}-"
