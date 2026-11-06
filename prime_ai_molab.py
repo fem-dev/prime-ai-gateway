@@ -21,14 +21,14 @@ def _():
 
     # Each project file has its own direct GitHub Raw URL.
     RAW_FILES = {
-        "prime_ai_engine.py": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_ai_engine.py?prime_revision=fe7e799",
-        "token.txt": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/token.txt?prime_revision=fe7e799",
-        "prime_theme.css": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_theme.css?prime_revision=fe7e799",
-        "pixel_ghost.html": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/pixel_ghost.html?prime_revision=fe7e799",
-        "PRIME_AI_KNOWLEDGE.md": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/PRIME_AI_KNOWLEDGE.md?prime_revision=fe7e799",
-        "prime_chat_widget.py": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat_widget.py?prime_revision=fe7e799",
-        "prime_chat.js": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat.js?prime_revision=fe7e799",
-        "prime_chat.css": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat.css?prime_revision=fe7e799",
+        "prime_ai_engine.py": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_ai_engine.py?prime_revision=608831885d9e",
+        "token.txt": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/token.txt?prime_revision=608831885d9e",
+        "prime_theme.css": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_theme.css?prime_revision=608831885d9e",
+        "pixel_ghost.html": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/pixel_ghost.html?prime_revision=608831885d9e",
+        "PRIME_AI_KNOWLEDGE.md": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/PRIME_AI_KNOWLEDGE.md?prime_revision=608831885d9e",
+        "prime_chat_widget.py": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat_widget.py?prime_revision=608831885d9e",
+        "prime_chat.js": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat.js?prime_revision=608831885d9e",
+        "prime_chat.css": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat.css?prime_revision=608831885d9e",
     }
 
     project_dir = Path(tempfile.gettempdir()) / "prime-ai-gateway"
