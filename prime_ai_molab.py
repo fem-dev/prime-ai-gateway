@@ -14,7 +14,9 @@ app = marimo.App(width="full", css_file=str(_CSS_PATH) if _CSS_PATH.is_file() el
 @app.cell
 def _():
     # Create the checkbox in its own cell; its value is consumed by the chat cell.
-    search_toggle = marimo.ui.checkbox(
+    import marimo as mo
+
+    search_toggle = mo.ui.checkbox(
         value=False,
         label="🌐 جست‌وجوی وب (استفاده از نتایج اینترنت در پاسخ‌ها)",
     )
