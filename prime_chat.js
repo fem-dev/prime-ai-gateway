@@ -41,7 +41,7 @@ function render({ model, el }) {
     history.push({role:"user",content:text,files:files.map(f=>f.name)});
     draw();input.value="";input.style.height="auto";busy=true;status("در حال فکر کردن...",true);
     rid++;
-    model.set("request",JSON.stringify({id:rid,text:text,history:history.map(m=>({role:m.role,content:m.content})),attachments:files}));
+    model.set("request",JSON.stringify({id:rid,text:text,history:history.slice(0,-1).map(m=>({role:m.role,content:m.content})),attachments:files}));
     model.save_changes();
   }
   q(".pc-send").onclick=send;
