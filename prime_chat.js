@@ -12,8 +12,18 @@ function render({ model, el }) {
   }
   function draw() {
     q(".pc-welcome").hidden=history.length>0;
-    feed.innerHTML=history.map(m=>'<article class="pc-msg '+m.role+'"><span class="pc-avatar">'+(m.role==="user"?"ش":"✦")+'</span><div class="pc-body">'+md(m.content)+(m.image_data?'<img alt="تصویر تولیدشده" src="'+m.image_data+'"><a class="pc-download" download="prime-ai-image.png" href="'+m.image_data+'">دانلود تصویر</a>':"")+(m.files&&m.files.length?'<div class="pc-filechips">'+m.files.map(n=>'<span>📎 '+esc(n)+'</span>').join("")+'</div>':"")+'</div></article>').join("");
+    feed.innerHTML=history.map(m=>'<article class="pc-msg '+m.role+'"><span class="pc-avatar">'+(m.role==="user"?"ش":"✦")+'</span><div class="pc-body">'+md(m.content)+(m.image_data?'<img alt="تصویر تولیدشده" src="'+m.image_data+'"><a class="pc-download" download="prime-ai-image.png" href="'+m.image_data+'">دانلود تصویر</a>':"")+(m.choice?'<div class="pc-model-choices"><button data-model="anima">Anima <small>ممکن است خروجی نامناسب داشته باشد</small></button><button data-model="qwen">Qwen-Image <small>ممکن است در بعضی درخواست‌ها قدرت کمتری داشته باشد</small></button></div>':"")+(m.files&&m.files.length?'<div class="pc-filechips">'+m.files.map(n=>'<span>📎 '+esc(n)+'</span>').join("")+'</div>':"")+'</div></article>').join("");
     feed.querySelectorAll(".pc-copy").forEach(b=>b.onclick=()=>{navigator.clipboard?.writeText(b.parentElement.querySelector("code").textContent);b.textContent="کپی شد";});
+    feed.querySelectorAll("[data-model]").forEach(b=>b.onclick=()=>{
+      if(!busy||!window.__primePendingImagePrompt)return;
+      const choice=b.dataset.model, prompt=window.__primePendingImagePrompt;
+      window.__primePendingImagePrompt=null;
+      history=history.filter(m=>!m.choice);
+      draw();
+      status(choice==="anima"?"در حال آماده‌سازی Anima...":"در حال آماده‌سازی Qwen-Image...",true);
+      model.set("request",JSON.stringify({id:rid,text:"",history:history.map(m=>({role:m.role,content:m.content})),attachments:[],image_prompt:prompt,image_model:choice}));
+      model.save_changes();
+    });
     area.scrollTop=area.scrollHeight;
   }
   function status(s,thinking) {
@@ -56,6 +66,11 @@ function render({ model, el }) {
   model.on("change:response",()=>{
     let d={};try{d=JSON.parse(model.get("response")||"{}");}catch(e){}
     if(d.id!==rid||!busy)return;
+    if(d.choose_image_model){
+      window.__primePendingImagePrompt=d.prompt||"";
+      history.push({role:"assistant",content:d.text||"مدل تصویرساز را انتخاب کن:",choice:true});
+      draw();status("انتخاب مدل تصویر",false);return;
+    }
     if(d.error)history.push({role:"assistant",content:d.error});
     else if(d.text)history.push({role:"assistant",content:d.text,image_data:d.image_data||null});
     draw();busy=false;status("آماده",false);
