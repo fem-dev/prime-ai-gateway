@@ -368,20 +368,22 @@ def build_prime_ai(_legacy_search_toggle=None):
                         import os
                         import urllib.parse
                         import urllib.request
-                        token = os.environ.get("CIVITAI_TOKEN", "").strip()
-                        if not token:
-                            token_files = (APP_DIRECTORY / "token.txt", Path.cwd() / "token.txt")
-                            for token_file in token_files:
-                                try:
-                                    if token_file.is_file():
-                                        token = token_file.read_text(encoding="utf-8").strip()
-                                        if token:
-                                            break
-                                except OSError:
-                                    continue
+                        # token.txt: first line is Civitai; second line is Hugging Face.
+                        token_lines = []
+                        token_files = (APP_DIRECTORY / "token.txt", Path.cwd() / "token.txt")
+                        for token_file in token_files:
+                            try:
+                                if token_file.is_file():
+                                    token_lines = token_file.read_text(encoding="utf-8-sig").splitlines()
+                                    break
+                            except OSError:
+                                continue
+                        civitai_file_token = token_lines[0].strip() if token_lines else ""
+                        hf_file_token = token_lines[1].strip() if len(token_lines) > 1 else ""
+                        token = os.environ.get("CIVITAI_TOKEN", "").strip() or civitai_file_token
                         if not token:
                             raise RuntimeError(
-                                "کلید Civitai پیدا نشد. توکن را در فایل token.txt کنار فایل‌های Prime AI قرار بده."
+                                "توکن Civitai در متغیر CIVITAI_TOKEN یا خط اول فایل token.txt پیدا نشد."
                             )
                         cache_dir = Path.home() / ".cache" / "prime-ai" / "models"
                         cache_dir.mkdir(parents=True, exist_ok=True)
@@ -527,6 +529,7 @@ def build_prime_ai(_legacy_search_toggle=None):
                         hf_token = (
                             os.environ.get("HF_TOKEN", "").strip()
                             or os.environ.get("HUGGINGFACE_HUB_TOKEN", "").strip()
+                            or hf_file_token
                         )
                         try:
                             pipe = FluxPipeline.from_single_file(
