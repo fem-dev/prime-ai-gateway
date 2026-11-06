@@ -1,112 +1,87 @@
-/* PRIME AI — industrial dark interface */
+/* PRIME AI — chat-first dark interface */
 :root { color-scheme: dark !important; }
 html, body, #root, .app {
-  background: #08090b !important;
-  color: #e5e1df !important;
+  background:#08090b !important;
+  color:#e5e1df !important;
 }
 body {
-  min-width: 320px;
-  background:
-    radial-gradient(ellipse at 78% 0%, rgba(92,18,31,.16), transparent 38%),
-    #08090b !important;
+  min-width:320px;
+  background:radial-gradient(ellipse at 70% 0%,rgba(92,18,31,.12),transparent 40%),#08090b !important;
 }
 main {
-  box-sizing: border-box !important;
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 28px 30px 42px 252px !important;
-  color: #e5e1df !important;
+  box-sizing:border-box !important;
+  width:100% !important;
+  max-width:none !important;
+  margin:0 !important;
+  padding:18px clamp(12px,3vw,42px) 24px !important;
+  color:#e5e1df !important;
 }
-main > div { max-width: 1120px; margin-left: auto; margin-right: auto; }
-main h1, main h2, main h3 { color: #f0e8e8 !important; letter-spacing: .045em; }
-main p, main li, main label { color: #b9b0b1 !important; }
-main a { color: #d58a98 !important; }
-.prime-kicker {
-  display:inline-block; margin-top:-8px; color:#a34b5c;
-  font: 10px/1.5 ui-monospace,monospace; letter-spacing:.18em;
+main > div {
+  width:100% !important;
+  max-width:1200px !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
 }
-.prime-footer {
-  color:#665c60; font:10px ui-monospace,monospace; letter-spacing:.08em;
+main h1 {
+  color:#d7c8cb !important;
+  font:700 17px/1.4 ui-monospace,monospace !important;
+  letter-spacing:.2em !important;
+  margin:0 0 12px !important;
 }
-.prime-sidebar {
-  position:fixed; z-index:900; top:0; bottom:0; left:0;
-  box-sizing:border-box; width:224px; padding:26px 16px 18px;
-  display:flex; flex-direction:column; gap:13px;
-  background:linear-gradient(180deg,rgba(13,13,16,.99),rgba(8,9,11,.99));
-  border-right:1px solid #2b171d;
-  color:#d4cacc; font:13px/1.5 ui-sans-serif,system-ui,sans-serif;
-}
-.prime-brand {
-  display:flex; align-items:center; gap:10px; padding:3px 2px 10px;
-  font-weight:850; font-size:16px; letter-spacing:.16em; color:#f0e8e8;
-}
-.prime-brand-mark {
-  width:30px;height:30px;display:grid;place-items:center;
-  border:1px solid #8b293d; background:#210d13;color:#e9a2ae;
-  font:800 14px ui-monospace,monospace;
-  box-shadow:0 0 18px rgba(133,26,48,.18);
-}
-.brand-dim { color:#80545d; }
-.prime-side-rule { height:1px; background:linear-gradient(90deg,#6d2534,transparent); margin:2px 0 8px; }
-.prime-nav-label {
-  margin:7px 6px 0; color:#775b61; font:10px ui-monospace,monospace;
-  letter-spacing:.18em;
-}
-.prime-nav-item {
-  display:flex; align-items:center; gap:9px; min-height:34px;
-  padding:7px 10px; border:1px solid transparent; border-radius:3px;
-  color:#a99b9f; background:rgba(255,255,255,.015);
-}
-.prime-nav-item.active {
-  color:#f0dfe2; background:rgba(103,22,41,.22);
-  border-color:#4c202b;
-}
-.nav-led,.status-led {
-  display:inline-block; width:7px;height:7px;border-radius:50%;
-  background:#a63a4d; box-shadow:0 0 9px #a63a4d;
-}
-.nav-icon { color:#a34b5c; font-size:15px; }
-.nav-state { margin-left:auto; color:#68575b; font:9px ui-monospace,monospace; }
-.prime-side-foot {
-  margin-top:auto; padding:14px 7px 4px; border-top:1px solid #2c1a20;
-  color:#a85a68; font:10px/2 ui-monospace,monospace; letter-spacing:.08em;
-}
-.side-muted { color:#5e5155; }
-.status-led { margin-right:6px; width:6px;height:6px; background:#8d3747; }
+main p, main li, main label { color:#b9b0b1 !important; }
+main a { color:#d58a98 !important; }
+
+/* Give the actual chat panel most of the viewport. F11 then expands the chat,
+   rather than leaving a short chat box in the middle of a full-screen page. */
 main [data-testid*="chat"], main [class*="chat"] {
+  box-sizing:border-box !important;
   color:#e7dfe1 !important;
 }
 main [data-testid*="chat"] {
-  background:#0d0d11 !important; border:1px solid #342029 !important;
-  border-radius:4px !important; box-shadow:0 14px 44px rgba(0,0,0,.28);
+  min-height:76vh !important;
+  height:76vh !important;
+  max-height:none !important;
+  display:flex !important;
+  flex-direction:column !important;
+  background:#0c0c10 !important;
+  border:1px solid #342029 !important;
+  border-radius:4px !important;
+  box-shadow:0 14px 44px rgba(0,0,0,.28);
+}
+/* Let the message history expand and keep the composer visible at the bottom. */
+main [data-testid*="chat"] > div {
+  min-height:0;
 }
 main textarea, main input, main [contenteditable="true"] {
-  background:#111116 !important; color:#f0e8e8 !important;
-  border:1px solid #49303a !important; border-radius:3px !important;
+  background:#111116 !important;
+  color:#f0e8e8 !important;
+  border:1px solid #49303a !important;
+  border-radius:3px !important;
 }
 main textarea:focus, main input:focus, main [contenteditable="true"]:focus {
-  border-color:#914052 !important; box-shadow:0 0 0 2px rgba(145,64,82,.13) !important;
+  border-color:#914052 !important;
+  box-shadow:0 0 0 2px rgba(145,64,82,.13) !important;
 }
 main button {
-  color:#e8dfe1 !important; border-radius:3px !important;
+  color:#e8dfe1 !important;
+  border-radius:3px !important;
 }
 main button:hover { border-color:#a34b5c !important; }
-#prime-fullscreen-btn { transition:all .15s ease; }
-#prime-fullscreen-btn:hover {
-  background:#291018 !important; border-color:#a34b5c !important;
-  box-shadow:0 0 18px rgba(145,35,58,.2);
-}
 iframe[title="Pixel Ghost Coder"] {
-  background:transparent !important; color-scheme:normal !important;
-  border:0 !important; box-shadow:none !important;
-}
-@media(max-width:900px) {
-  .prime-sidebar { width:190px; padding-left:11px; padding-right:11px; }
-  main { padding-left:208px !important; padding-right:18px !important; }
+  background:transparent !important;
+  color-scheme:normal !important;
+  border:0 !important;
+  box-shadow:none !important;
+  opacity:.48 !important;
 }
 @media(max-width:650px) {
-  .prime-sidebar { display:none !important; }
-  main { padding:18px 10px 28px !important; }
-  iframe[title="Pixel Ghost Coder"] { width:112px !important;height:86px !important;right:8px !important;bottom:8px !important; }
+  main { padding:12px 8px 18px !important; }
+  main [data-testid*="chat"] {
+    min-height:78vh !important;
+    height:78vh !important;
+  }
+  iframe[title="Pixel Ghost Coder"] {
+    width:72px !important;height:58px !important;
+    right:5px !important;bottom:5px !important;opacity:.38 !important;
+  }
 }
