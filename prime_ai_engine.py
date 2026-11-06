@@ -330,7 +330,7 @@ def build_prime_ai(_legacy_search_toggle=None):
                 pass
             return {"action": "chat", "response": raw or "پاسخ مدل قابل پردازش نبود."}
 
-    def ensure_image_model(model_choice="qwen"):
+    def ensure_image_model(model_choice="qwen", hf_token=None):
         model_choice = "flux" if model_choice == "flux" else "qwen"
         model_id = "black-forest-labs/FLUX.1-dev" if model_choice == "flux" else "Qwen/Qwen-Image"
         with state["lock"]:
@@ -368,19 +368,9 @@ def build_prime_ai(_legacy_search_toggle=None):
                         import os
                         import urllib.parse
                         import urllib.request
-                        # token.txt: first line is Civitai; second line is Hugging Face.
-                        token_lines = []
-                        token_files = (APP_DIRECTORY / "token.txt", Path.cwd() / "token.txt")
-                        for token_file in token_files:
-                            try:
-                                if token_file.is_file():
-                                    token_lines = token_file.read_text(encoding="utf-8-sig").splitlines()
-                                    break
-                            except OSError:
-                                continue
-                        civitai_file_token = token_lines[0].strip() if token_lines else ""
-                        hf_file_token = token_lines[1].strip() if len(token_lines) > 1 else ""
-                        token = os.environ.get("CIVITAI_TOKEN", "").strip() or civitai_file_token
+                        # Civitai credentials stay in the runtime environment; the HF token
+                        # is requested through the password dialog and is never read from files.
+                        token = os.environ.get("CIVITAI_TOKEN", "").strip()
                         if not token:
                             raise RuntimeError(
                                 "توکن Civitai در متغیر CIVITAI_TOKEN یا خط اول فایل token.txt پیدا نشد."
@@ -522,33 +512,26 @@ def build_prime_ai(_legacy_search_toggle=None):
                             verified_marker.write_text(expected_sha256, encoding="utf-8")
                         prime_chat_widget.status = "در حال بارگذاری checkpoint دریافتی از Civitai..."
                         from diffusers import FluxPipeline
-                        # The Civitai checkpoint is downloadable separately, but Diffusers
-                        # still needs FLUX's configuration files from the gated HF repo.
-                        # Supply a Hugging Face token only after the account has accepted
-                        # the model license and been granted access.
-                        hf_token = (
-                            os.environ.get("HF_TOKEN", "").strip()
-                            or os.environ.get("HUGGINGFACE_HUB_TOKEN", "").strip()
-                            or hf_file_token
-                        )
+                        # Diffusers needs gated FLUX configuration files from Hugging Face.
+                        # The user supplies this token in a password field for this request only.
+                        hf_token = str(hf_token or "").strip()
+                        if not hf_token:
+                            raise RuntimeError("برای استفاده از FLUX، توکن Hugging Face را در پنجرهٔ ورود توکن وارد کن.")
                         try:
                             pipe = FluxPipeline.from_single_file(
                                 str(checkpoint),
                                 config="black-forest-labs/FLUX.1-dev",
                                 torch_dtype=dtype,
-                                token=hf_token or None,
+                                token=hf_token,
                             )
                         except Exception as config_error:
                             error_text = str(config_error)
                             if "401" in error_text or "gated repo" in error_text.lower() or "restricted" in error_text.lower():
                                 raise RuntimeError(
-                                    "فایل وزن‌های FLUX از Civitai دریافت شده، اما فایل‌های پیکربندی لازم از "
-                                    "مخزن محدودشدهٔ Hugging Face قابل دریافت نیستند. در حساب Hugging Face وارد شو، "
-                                    "صفحهٔ مدل black-forest-labs/FLUX.1-dev را باز کن و دسترسی/شرایط استفاده را "
-                                    "تأیید کن؛ سپس یک User Access Token بساز و آن را در محیط Molab با نام "
-                                    "HF_TOKEN قرار بده، بعد کرنل را Restart کن. توکن Civitai با توکن Hugging Face "
-                                    "متفاوت است و جایگزین آن نمی‌شود. اگر دسترسی مدل برای حسابت تأیید نشده باشد، "
-                                    "صرفاً واردکردن توکن مشکل را حل نمی‌کند. جزئیات: " + error_text[-700:]
+                                    "دسترسی Hugging Face تأیید نشد. مطمئن شو حساب تو به مخزن "
+                                    "black-forest-labs/FLUX.1-dev دسترسی دارد و توکن معتبر با مجوز خواندن وارد کرده‌ای. "
+                                    "توکن فقط برای همین درخواست استفاده می‌شود و در فایل یا GitHub ذخیره نمی‌شود. "
+                                    "جزئیات: " + error_text[-700:]
                                 ) from config_error
                             raise
                     else:
@@ -585,7 +568,7 @@ def build_prime_ai(_legacy_search_toggle=None):
             return state["image_pipe"]
 
 
-    def generate_image(prompt_text, model_choice="qwen"):
+    def generate_image(prompt_text, model_choice="qwen", hf_token=None):
         if not torch.cuda.is_available():
             return "برای ساخت تصویر باید GPU را در تنظیمات Molab فعال کنی."
 
@@ -593,7 +576,7 @@ def build_prime_ai(_legacy_search_toggle=None):
             # Do not release the lock until GPU-backed pipeline references are cleaned up.
             unload_chat_model()
             model_choice = "flux" if model_choice == "flux" else "qwen"
-            pipe = ensure_image_model(model_choice)
+            pipe = ensure_image_model(model_choice, hf_token=hf_token)
             user_prompt = str(prompt_text)
             seed = int(torch.randint(0, 2**31 - 1, (1,)).item())
             call_args = {
@@ -718,7 +701,7 @@ def build_prime_ai(_legacy_search_toggle=None):
                         return
                     if payload.get("image_prompt"):
                         prime_chat_widget.status = "در حال آماده‌سازی مدل تصویر..."
-                        result = generate_image(str(payload.get("image_prompt", "")), str(payload.get("image_model", "qwen")))
+                        result = generate_image(str(payload.get("image_prompt", "")), str(payload.get("image_model", "qwen")), hf_token=payload.get("hf_token"))
                     else:
                         result = answer(messages, {})
                     if cancel_event.is_set():
