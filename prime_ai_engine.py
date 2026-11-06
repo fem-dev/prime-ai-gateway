@@ -80,6 +80,7 @@ def build_prime_ai(_legacy_search_toggle=None):
             "vision_model": None,
             "vision_processor": None,
             "image_pipe": None,
+            "image_model_loaded": None,
             "image_loading": False,
             "image_error": None,
             "lock": threading.RLock(),
@@ -329,29 +330,51 @@ def build_prime_ai(_legacy_search_toggle=None):
                 pass
             return {"action": "chat", "response": raw or "پاسخ مدل قابل پردازش نبود."}
 
-    def ensure_image_model():
+    def ensure_image_model(model_choice="anima"):
+        model_choice = "qwen" if model_choice == "qwen" else "anima"
+        model_id = "Qwen/Qwen-Image" if model_choice == "qwen" else IMAGE_ID
         with state["lock"]:
+            if state["image_pipe"] is not None and state.get("image_model_loaded") != model_choice:
+                unload_image_model()
+                state["image_model_loaded"] = None
             if state["image_pipe"] is None:
                 if not torch.cuda.is_available():
                     raise RuntimeError("برای بارگذاری مدل تصویر، GPU را در تنظیمات Molab فعال کن.")
-                from diffusers import ModularPipeline
+                from huggingface_hub import snapshot_download
+                from tqdm.auto import tqdm
                 dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
                 state["image_loading"] = True
                 state["image_error"] = None
                 pipe = None
+                class WidgetProgress(tqdm):
+                    def update(self, n=1):
+                        result = super().update(n)
+                        if self.total:
+                            pct = min(100, int(self.n * 100 / self.total))
+                            try:
+                                prime_chat_widget.status = f"دانلود {model_id}: {pct}%"
+                            except Exception:
+                                pass
+                        return result
                 try:
                     unload_chat_model()
                     gc.collect()
                     torch.cuda.synchronize()
                     torch.cuda.empty_cache()
                     free_bytes, total_bytes = torch.cuda.mem_get_info()
-                    if free_bytes < 28 * 1024**3:
-                        raise RuntimeError(
-                            f"حافظه آزاد GPU کافی نیست: {free_bytes / 1024**3:.1f} GiB آزاد از "
-                            f"{total_bytes / 1024**3:.1f} GiB. مدل‌های دیگر را متوقف کن و دوباره تلاش کن."
-                        )
-                    pipe = ModularPipeline.from_pretrained(IMAGE_ID)
-                    pipe.load_components(dtype=dtype)
+                    minimum = 22 if model_choice == "qwen" else 18
+                    if free_bytes < minimum * 1024**3:
+                        raise RuntimeError(f"حافظه آزاد GPU کافی نیست: {free_bytes / 1024**3:.1f} GiB. مدل‌های دیگر را متوقف کن و دوباره تلاش کن.")
+                    prime_chat_widget.status = f"در حال بررسی و دانلود فایل‌های {model_id}..."
+                    local_model = snapshot_download(repo_id=model_id, tqdm_class=WidgetProgress)
+                    prime_chat_widget.status = f"در حال بارگذاری {model_id} روی GPU..."
+                    if model_choice == "qwen":
+                        from diffusers import DiffusionPipeline
+                        pipe = DiffusionPipeline.from_pretrained(local_model, torch_dtype=dtype, local_files_only=True)
+                    else:
+                        from diffusers import ModularPipeline
+                        pipe = ModularPipeline.from_pretrained(local_model, local_files_only=True)
+                        pipe.load_components(dtype=dtype)
                     if hasattr(pipe, "enable_model_cpu_offload"):
                         pipe.enable_model_cpu_offload()
                     elif hasattr(pipe, "enable_sequential_cpu_offload"):
@@ -359,11 +382,13 @@ def build_prime_ai(_legacy_search_toggle=None):
                     else:
                         pipe.to("cuda")
                     state["image_pipe"] = pipe
+                    state["image_model_loaded"] = model_choice
                 except Exception as exc:
                     state["image_error"] = str(exc)
                     if pipe is not None:
                         del pipe
                     state["image_pipe"] = None
+                    state["image_model_loaded"] = None
                     gc.collect()
                     if torch.cuda.is_available():
                         torch.cuda.empty_cache()
@@ -373,31 +398,42 @@ def build_prime_ai(_legacy_search_toggle=None):
             return state["image_pipe"]
 
 
-    def generate_image(prompt_text):
+    def generate_image(prompt_text, model_choice='anima'):
         if not torch.cuda.is_available():
             return "برای ساخت تصویر باید GPU را در تنظیمات Molab فعال کنی."
 
         with state["lock"]:
             # Do not release the lock until GPU-backed pipeline references are cleaned up.
             unload_chat_model()
-            pipe = ensure_image_model()
-            result = pipe(
-                prompt="masterpiece, best quality, coherent composition, faithful to the requested subject, " + str(prompt_text),
-                width=768,
-                height=1024,
-                num_inference_steps=28,
-                guidance_scale=4.5,
-                negative_prompt=(
+            pipe = ensure_image_model(model_choice)
+            user_prompt = str(prompt_text)
+            if model_choice != "qwen":
+                prompt_file = APP_DIRECTORY / "ANIMA_STYLE_PROMPT.md"
+                if prompt_file.exists():
+                    extra_style = prompt_file.read_text(encoding="utf-8").strip()
+                    if extra_style and not extra_style.startswith("<!--"):
+                        user_prompt += "\\n\\n" + extra_style
+            call_args = {
+                "prompt": "masterpiece, best quality, coherent composition, faithful to the requested subject, " + user_prompt,
+                "width": 1024 if model_choice == "qwen" else 768,
+                "height": 1024,
+                "num_inference_steps": 50 if model_choice == "qwen" else 28,
+                "negative_prompt": (
                     "worst quality, low quality, blurry, jpeg artifacts, chromatic aberration, "
                     "bad anatomy, extra fingers, missing fingers, deformed hands, text, watermark"
                     + (", unrelated subject, random characters, speech bubbles, comic panel, manga page, classroom"
                        if any(term in str(prompt_text).lower() for term in ("floating city", "city above clouds", "sky city", "شهر روی ابر", "شهر آسمانی"))
                        else "")
                 ),
-                generator=torch.Generator(device="cuda").manual_seed(
+                "generator": torch.Generator(device="cuda").manual_seed(
                     int(torch.randint(0, 2**31 - 1, (1,)).item())
                 ),
-            )
+            }
+            if model_choice == "qwen":
+                call_args["true_cfg_scale"] = 4.0
+            else:
+                call_args["guidance_scale"] = 4.5
+            result = pipe(**call_args)
             image = result.images[0]
             buffer = io.BytesIO()
             image.save(buffer, format="PNG", optimize=True)
@@ -415,7 +451,7 @@ def build_prime_ai(_legacy_search_toggle=None):
             with state["lock"]:
                 decision = ask_qwen(messages, attachment_context=attachment_context)
                 if decision.get("action") == "image":
-                    return generate_image(decision["prompt"])
+                    return {"choose_image_model": True, "prompt": decision["prompt"], "text": "برای این تصویر کدام مدل را انتخاب می‌کنی؟"}
 
             if decision.get("action") == "search":
                 query = decision.get("query", "").strip()
@@ -494,7 +530,11 @@ def build_prime_ai(_legacy_search_toggle=None):
                     ))
                     if cancel_event.is_set():
                         return
-                    result = answer(messages, {})
+                    if payload.get("image_prompt"):
+                        prime_chat_widget.status = "در حال آماده‌سازی مدل تصویر..."
+                        result = generate_image(str(payload.get("image_prompt", "")), str(payload.get("image_model", "anima")))
+                    else:
+                        result = answer(messages, {})
                     if cancel_event.is_set():
                         return
                     response_payload = {"id": int(request_id), **result} if isinstance(result, dict) else {"id": int(request_id), "text": str(result)}
