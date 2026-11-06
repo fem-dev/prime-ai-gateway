@@ -15,7 +15,7 @@ Open `prime_ai_molab.py` in Molab.
 - `PRIME_AI_KNOWLEDGE.md` — editable project knowledge.
 - `main.py` — separate FastAPI gateway service.
 
-At startup, the loader downloads each asset from its own explicit Raw URL into a temporary directory. Chat and image models load on demand. Qwen-Image is the only image-generation model.
+At startup, the loader downloads each asset from its own explicit Raw URL into a temporary directory. Chat and image models load on demand. Qwen-Image and FLUX.1-dev are available as image-generation models.
 
 Enable a GPU in Molab before sending chat or image requests. The first request may take time while model weights are downloaded.
 
@@ -25,6 +25,6 @@ The notebook uses a standalone AnyWidget interface instead of Marimo's built-in 
 
 ## Image generation
 
-When Prime AI identifies an image-generation request, it automatically downloads and uses **Qwen-Image**. The chat status displays download progress and the current loading stage. No image-model selection step is shown, and only one image pipeline is kept active at a time to reduce GPU memory use.
+When Prime AI identifies an image-generation request, the chat offers **Qwen-Image** and **FLUX.1-dev**. The selected model is downloaded on demand, and only one image pipeline is kept active at a time to reduce GPU memory use. FLUX.1-dev requires accepting the model conditions on Hugging Face and authenticating with an account that has access. FLUX.1-dev is under its non-commercial license; review the model card before use.
 
 The image-generation flow has not yet been tested in a live Molab runtime.
