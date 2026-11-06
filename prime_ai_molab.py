@@ -19,7 +19,7 @@ def _():
 
     import marimo as mo
 
-    INSTALL_MARKER = Path.home() / ".prime_ai_deps_installed_z_anime"
+    INSTALL_MARKER = Path.home() / ".prime_ai_deps_installed_anima"
     if not INSTALL_MARKER.exists():
         packages = [
             "transformers>=4.51.0",
@@ -47,7 +47,7 @@ def _():
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     QWEN_ID = "Qwen/Qwen3-32B"
-    IMAGE_ID = "SeeSee21/Z-Anime"
+    IMAGE_ID = "circlestone-labs/Anima-Base-v1.0-Diffusers"
     state = globals().setdefault(
         "_prime_ai_state",
         {
@@ -157,27 +157,15 @@ def _():
             if state["image_pipe"] is None:
                 if not torch.cuda.is_available():
                     raise RuntimeError("برای بارگذاری مدل تصویر، GPU را در تنظیمات Molab فعال کن.")
-                from diffusers import ZImagePipeline
+                from diffusers import ModularPipeline
                 dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
                 state["image_loading"] = True
                 state["image_error"] = None
                 try:
-                    # The Diffusers pipeline is stored in the repository's diffusers/ subfolder.
-                    from huggingface_hub import snapshot_download
-                    snapshot_dir = snapshot_download(
-                        repo_id=IMAGE_ID,
-                        revision="main",
-                        allow_patterns=["diffusers/*"],
-                    )
-                    local_model_dir = Path(snapshot_dir) / "diffusers"
-                    if not (local_model_dir / "model_index.json").is_file():
-                        raise FileNotFoundError(
-                            f"Z-Anime model_index.json not found in {local_model_dir}"
-                        )
-                    state["image_pipe"] = ZImagePipeline.from_pretrained(
-                        str(local_model_dir),
-                        torch_dtype=dtype,
-                    ).to("cuda")
+                    # Official Anima Diffusers distribution uses the modular pipeline.
+                    pipe = ModularPipeline.from_pretrained(IMAGE_ID)
+                    pipe.load_components(dtype=dtype)
+                    state["image_pipe"] = pipe.to("cuda")
                 except Exception as exc:
                     state["image_error"] = str(exc)
                     raise
@@ -188,7 +176,7 @@ def _():
     def preload_image_model():
         try:
             ensure_image_model()
-            print("Prime AI: Z-Anime آماده است.")
+            print("Prime AI: Anima آماده است.")
         except Exception as exc:
             print("Prime AI: بارگذاری اولیه Z-Anime ناموفق بود:", str(exc)[-2000:])
 
@@ -200,12 +188,12 @@ def _():
             unload_chat_model()
             pipe = ensure_image_model()
             result = pipe(
-                prompt=prompt_text,
+                prompt="masterpiece, best quality, safe, " + prompt_text,
                 width=832,
                 height=1216,
                 num_inference_steps=40,
-                guidance_scale=4.0,
-                negative_prompt="low quality, blurry, poorly drawn, bad anatomy, extra fingers, missing fingers, deformed hands, text, watermark",
+                guidance_scale=4.5,
+                negative_prompt="worst quality, low quality, blurry, jpeg artifacts, chromatic aberration, bad anatomy, extra fingers, missing fingers, deformed hands, text, watermark",
                 generator=torch.Generator(device="cuda").manual_seed(
                     int(torch.randint(0, 2**31 - 1, (1,)).item())
                 ),
@@ -263,13 +251,14 @@ def _():
     )
 
     mo.vstack([
+        fullscreen_button,
         mo.md("""
 # ✦ PRIME AI
 ### یک چت هوشمند برای گفت‌وگو و ساخت تصویر
 
 همه‌چیز از همین کادر چت انجام می‌شود:
 - **Qwen3-32B (BF16)** برای گفت‌وگو و تشخیص درخواست ساخت تصویر
-- **Z-Anime (BF16)** برای تولید تخصصی تصویر انیمه
+- **Anima 2B (BF16)** برای تولید تخصصی تصویر انیمه
 
 فقط درخواست ساخت تصویرت را در چت بنویس؛ Prime AI تشخیص می‌دهد و تصویر را همان‌جا در گفت‌وگو نمایش می‌دهد.
 برای اجرای مدل‌ها GPU را در تنظیمات Molab فعال کن. بار اول، وزن‌های عمومی مدل‌ها بدون API Key یا توکن Hugging Face دانلود می‌شوند.
