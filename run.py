@@ -28,6 +28,7 @@ def _():
         "prime_chat_widget.py": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat_widget.py",
         "prime_chat.js": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat.js",
         "prime_chat.css": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_chat.css",
+        "prime_knife.svg": "https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_knife.svg",
     }
 
     project_dir = Path(tempfile.gettempdir()) / "prime-ai-gateway"
