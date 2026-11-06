@@ -445,44 +445,75 @@ def build_prime_ai(_legacy_search_toggle=None):
     prime_chat_widget = PrimeChatWidget()
     prime_chat = mo.ui.anywidget(prime_chat_widget)
 
+    _active_requests = {}
+    _request_guard = threading.Lock()
+
+    def _handle_cancel(change):
+        cancel_id = change.get("new", "")
+        with _request_guard:
+            event = _active_requests.get(str(cancel_id))
+            if event:
+                event.set()
+
     def _handle_prime_request(change):
         raw = change.get("new", "")
         if not raw:
             return
-        request_id = -1
         try:
             payload = json.loads(raw)
-            request_id = payload.get("id", -1)
-            history = payload.get("history", [])
-            attachment_objects = []
-            for item in payload.get("attachments", []):
-                data = base64.b64decode(item.get("data", ""), validate=True)
-                if len(data) <= 8 * 1024 * 1024:
-                    attachment_objects.append(SimpleNamespace(
-                        name=str(item.get("name", "attachment")),
-                        filename=str(item.get("name", "attachment")),
-                        content_type=str(item.get("type", "")),
-                        mime_type=str(item.get("type", "")),
-                        data=data, url=None,
-                    ))
-            messages = [
-                SimpleNamespace(role=str(m.get("role", "user")), content=str(m.get("content", "")), attachments=[])
-                for m in history[-23:]
-            ]
-            messages.append(SimpleNamespace(
-                role="user", content=str(payload.get("text", "")), attachments=attachment_objects
-            ))
-            result = answer(messages, {})
-            response_payload = {"id": request_id, **result} if isinstance(result, dict) else {"id": request_id, "text": str(result)}
-            prime_chat_widget.response = json.dumps(response_payload, ensure_ascii=False)
-            prime_chat_widget.status = "آماده"
-        except Exception as exc:
-            prime_chat_widget.response = json.dumps(
-                {"id": request_id, "error": "خطا: " + str(exc)[-1800:]}, ensure_ascii=False
-            )
-            prime_chat_widget.status = "خطا"
+            request_id = str(payload.get("id", "-1"))
+            with _request_guard:
+                previous = _active_requests.get(request_id)
+                if previous:
+                    previous.set()
+                cancel_event = threading.Event()
+                _active_requests[request_id] = cancel_event
+            prime_chat_widget.status = "در حال آماده‌سازی مدل‌ها..."
 
-    prime_chat_widget.observe(_handle_prime_request, names="request")
+            def _work():
+                try:
+                    history = payload.get("history", [])
+                    attachment_objects = []
+                    for item in payload.get("attachments", []):
+                        data = base64.b64decode(item.get("data", ""), validate=True)
+                        if len(data) <= 5 * 1024 * 1024:
+                            attachment_objects.append(SimpleNamespace(
+                                name=str(item.get("name", "attachment")),
+                                filename=str(item.get("name", "attachment")),
+                                content_type=str(item.get("type", "")),
+                                mime_type=str(item.get("type", "")),
+                                data=data, url=None,
+                            ))
+                    messages = [
+                        SimpleNamespace(role=str(m.get("role", "user")), content=str(m.get("content", "")), attachments=[])
+                        for m in history[-23:]
+                    ]
+                    messages.append(SimpleNamespace(
+                        role="user", content=str(payload.get("text", "")), attachments=attachment_objects
+                    ))
+                    if cancel_event.is_set():
+                        return
+                    result = answer(messages, {})
+                    if cancel_event.is_set():
+                        return
+                    response_payload = {"id": int(request_id), **result} if isinstance(result, dict) else {"id": int(request_id), "text": str(result)}
+                    prime_chat_widget.response = json.dumps(response_payload, ensure_ascii=False)
+                    prime_chat_widget.status = "آماده"
+                except Exception as exc:
+                    if not cancel_event.is_set():
+                        prime_chat_widget.response = json.dumps(
+                            {"id": int(request_id), "error": "خطا: " + str(exc)[-1800:]}, ensure_ascii=False
+                        )
+                        prime_chat_widget.status = "خطا"
+                finally:
+                    with _request_guard:
+                        _active_requests.pop(request_id, None)
+
+            threading.Thread(target=_work, daemon=True, name="prime-chat-request").start()
+        except Exception as exc:
+            prime_chat_widget.status = "خطا: " + str(exc)[-500:]
+
+    prime_chat_widget.observe(_handle_prime_request, names="request")\n    prime_chat_widget.observe(_handle_cancel, names="cancel_request")
 
     # Floating Pixel Ghost: the supplied HTML animation runs in an isolated iframe.
     _ghost_html = (Path(__file__).resolve().parent / "pixel_ghost.html").read_text(encoding="utf-8")
