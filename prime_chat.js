@@ -17,7 +17,7 @@ function render({ model, el }) {
     area.scrollTop=area.scrollHeight;
   }
   function status(s,thinking) {
-    q(".pc-status i").textContent=s;
+    q(".pc-status i").textContent=s;\n    let knife=q(".pc-status .pc-knife");\n    if(thinking && !knife){knife=document.createElement("img");knife.className="pc-knife";knife.src="https://raw.githubusercontent.com/fem-dev/prime-ai-gateway/main/prime_knife.svg";knife.alt="";q(".pc-status").prepend(knife);}\n    if(!thinking && knife)knife.remove();
     q(".pc-status").classList.toggle("thinking",!!thinking);
     q(".pc-send").classList.toggle("thinking",!!thinking);
     q(".pc-send").hidden=!!thinking;\n    q(".pc-stop").hidden=!thinking;
