@@ -85,3 +85,25 @@ iframe[title="Pixel Ghost Coder"] {
     right:5px !important;bottom:5px !important;opacity:.38 !important;
   }
 }
+
+
+/* Replace the empty-chat bot mark with a restrained ghost watermark. */
+main [data-testid*="chat"] {
+  position:relative !important;
+}
+main [data-testid*="chat"] svg.lucide-bot,
+main [data-testid*="chat"] .lucide-bot {
+  display:none !important;
+}
+main [data-testid*="chat"]::before {
+  content:"👻";
+  position:absolute;
+  z-index:0;
+  left:50%;
+  top:42%;
+  transform:translate(-50%,-50%);
+  font:32px/1 system-ui,sans-serif;
+  opacity:.075;
+  filter:grayscale(1);
+  pointer-events:none;
+}
