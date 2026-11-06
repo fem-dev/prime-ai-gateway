@@ -11,7 +11,6 @@ app = marimo.App(width="full")
 
 @app.cell
 def _():
-    import base64
     import importlib.util
     import tempfile
     import urllib.error
@@ -47,11 +46,6 @@ def _():
                 f"Prime AI could not load {filename} from GitHub Raw: {url} ({exc})"
             ) from exc
 
-    search_toggle = mo.ui.checkbox(
-        value=False,
-        label="🌐 جست‌وجوی وب (استفاده از نتایج اینترنت در پاسخ‌ها)",
-    )
-
     spec = importlib.util.spec_from_file_location(
         "prime_ai_engine", files["prime_ai_engine.py"]
     )
@@ -62,7 +56,7 @@ def _():
 
     engine = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(engine)
-    prime_ui = engine.build_prime_ai(search_toggle)
+    prime_ui = engine.build_prime_ai()
 
     # Poll the GitHub main-branch head every 5 seconds. When it changes,
     # reload the notebook so the one-cell loader fetches all fresh Raw files.
