@@ -14,7 +14,7 @@ function render({ model, el }) {
     q(".pc-welcome").hidden=history.length>0;
     feed.innerHTML=history.map(m=>'<article class="pc-msg '+m.role+'"><span class="pc-avatar">'+(m.role==="user"?"ش":"✦")+'</span><div class="pc-body">'+md(m.content)+(m.image_data?'<img alt="تصویر تولیدشده" src="'+m.image_data+'"><a class="pc-download" download="prime-ai-image.png" href="'+m.image_data+'">دانلود تصویر</a>':"")+(m.choice?'<div class="pc-model-choices"><button data-model="qwen">Qwen-Image <small>مدل تصویرساز Qwen</small></button><button data-model="flux">FLUX.1-dev <small>مدل تصویرساز Flux</small></button></div>':"")+(m.files&&m.files.length?'<div class="pc-filechips">'+m.files.map(n=>'<span>📎 '+esc(n)+'</span>').join("")+'</div>':"")+'</div></article>').join("");
     feed.querySelectorAll(".pc-copy").forEach(b=>b.onclick=()=>{navigator.clipboard?.writeText(b.parentElement.querySelector("code").textContent);b.textContent="کپی شد";});
-    feed.querySelectorAll("[data-model]").forEach(b=>b.onclick=()=>chooseImageModel(b.dataset.model,history.findLast(m=>m.choice)?.prompt));
+    feed.querySelectorAll("[data-model]").forEach(b=>b.onclick=()=>chooseImageModel(b.dataset.model,history.slice().reverse().find(m=>m.choice)?.prompt));
     area.scrollTop=area.scrollHeight;
   }
   function chooseImageModel(choice,prompt) {
