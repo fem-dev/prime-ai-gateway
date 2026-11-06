@@ -49,13 +49,6 @@ def _():
                 f"Prime AI could not load {filename} from GitHub Raw: {url} ({exc})"
             ) from exc
 
-    # Create the Anima prompt locally. Keep user-added/private text out of GitHub.
-    private_prompt = project_dir / "ANIMA_STYLE_PROMPT.md"
-    base_prompt = "# راهنمای ساخت تصویر دقیق\n\nتصویر را دقیقاً بر اساس درخواست کاربر بساز.\n\n- موضوع اصلی و منظور دقیق کاربر را حفظ کن.\n- تمام جزئیاتی را که کاربر گفته، از جمله سوژه، مکان، حالت، تعداد، جایگاه عناصر، زاویهٔ دید، سبک و ترکیب‌بندی رعایت کن.\n- موضوع درخواست را با موضوعی دیگر جایگزین نکن و آن را به برداشت کلی یا معمولی تبدیل نکن.\n- چیزی را که کاربر درخواست نکرده، به تصویر اضافه نکن؛ از عناصر بی‌ربط، نوشته، لوگو، شخصیت یا اشیای اضافی خودداری کن.\n- اگر کاربر صحنه‌ای خیالی یا ناممکن توصیف کرد، همان صحنهٔ خیالی را مطابق توصیفش تصویرسازی کن.\n- عناصر مهم درخواست را حذف یا جابه‌جا نکن.\n- ترکیب‌بندی را روشن و منسجم نگه دار تا ایدهٔ اصلی در نگاه اول قابل تشخیص باشد.\n- پیش از ساخت تصویر، جزئیات درخواست را با هم تطبیق بده و مطمئن شو خروجی از موضوع اصلی منحرف نمی‌شود.\n- نتیجه باید بازنمایی وفادارانهٔ خواستهٔ کاربر باشد، نه صرفاً تصویری که چند واژهٔ درخواست را تداعی می‌کند.\n\n<!-- متن اختصاصی خودت را از خط بعد اضافه کن. -->\n"
-    old_template = "# Anima style / inspiration prompt\\n\\n<!-- Paste your private style prompt below this line. -->\\n"
-    if not private_prompt.exists() or private_prompt.read_text(encoding="utf-8") == old_template:
-        private_prompt.write_text(base_prompt, encoding="utf-8")
-
     spec = importlib.util.spec_from_file_location(
         "prime_ai_engine", files["prime_ai_engine.py"]
     )
