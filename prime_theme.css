@@ -107,3 +107,11 @@ main [data-testid*="chat"]::before {
   filter:grayscale(1);
   pointer-events:none;
 }
+
+/* RTL conversation and a subtle pixel-ghost identity for the chat placeholder. */
+main, main [data-testid*="chat"], main [class*="chat"] { direction:rtl!important; text-align:right!important; }
+main textarea, main input, main [contenteditable="true"] { direction:rtl!important; text-align:right!important; }
+main [data-testid*="chat"] svg.lucide-bot, main [data-testid*="chat"] svg[class*="bot"], main [data-testid*="chat"] [class*="Bot"] { display:none!important; }
+main [data-testid*="chat"]::before { content:""; width:52px; height:52px; background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23aebbb5' d='M18 9h28a7 7 0 0 1 7 7v34l-8-5-7 6-7-6-7 6-7-6-8 5V16a7 7 0 0 1 7-7z'/%3E%3Cpath fill='%2308090b' d='M22 25h6v8h-6zm15 0h6v8h-6zM27 39h10v3H27z'/%3E%3C/svg%3E"); opacity:.12; pointer-events:none; }
+iframe[title="Pixel Ghost Coder"] { width:120px!important; height:94px!important; opacity:.56!important; }
+@media(max-width:650px) { iframe[title="Pixel Ghost Coder"] { width:94px!important; height:74px!important; } }
