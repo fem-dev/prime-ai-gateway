@@ -520,11 +520,34 @@ def build_prime_ai(_legacy_search_toggle=None):
                             verified_marker.write_text(expected_sha256, encoding="utf-8")
                         prime_chat_widget.status = "در حال بارگذاری checkpoint دریافتی از Civitai..."
                         from diffusers import FluxPipeline
-                        pipe = FluxPipeline.from_single_file(
-                            str(checkpoint),
-                            config="black-forest-labs/FLUX.1-dev",
-                            torch_dtype=dtype,
+                        # The Civitai checkpoint is downloadable separately, but Diffusers
+                        # still needs FLUX's configuration files from the gated HF repo.
+                        # Supply a Hugging Face token only after the account has accepted
+                        # the model license and been granted access.
+                        hf_token = (
+                            os.environ.get("HF_TOKEN", "").strip()
+                            or os.environ.get("HUGGINGFACE_HUB_TOKEN", "").strip()
                         )
+                        try:
+                            pipe = FluxPipeline.from_single_file(
+                                str(checkpoint),
+                                config="black-forest-labs/FLUX.1-dev",
+                                torch_dtype=dtype,
+                                token=hf_token or None,
+                            )
+                        except Exception as config_error:
+                            error_text = str(config_error)
+                            if "401" in error_text or "gated repo" in error_text.lower() or "restricted" in error_text.lower():
+                                raise RuntimeError(
+                                    "فایل وزن‌های FLUX از Civitai دریافت شده، اما فایل‌های پیکربندی لازم از "
+                                    "مخزن محدودشدهٔ Hugging Face قابل دریافت نیستند. در حساب Hugging Face وارد شو، "
+                                    "صفحهٔ مدل black-forest-labs/FLUX.1-dev را باز کن و دسترسی/شرایط استفاده را "
+                                    "تأیید کن؛ سپس یک User Access Token بساز و آن را در محیط Molab با نام "
+                                    "HF_TOKEN قرار بده، بعد کرنل را Restart کن. توکن Civitai با توکن Hugging Face "
+                                    "متفاوت است و جایگزین آن نمی‌شود. اگر دسترسی مدل برای حسابت تأیید نشده باشد، "
+                                    "صرفاً واردکردن توکن مشکل را حل نمی‌کند. جزئیات: " + error_text[-700:]
+                                ) from config_error
+                            raise
                     else:
                         from huggingface_hub import snapshot_download
                         prime_chat_widget.status = f"در حال بررسی و دانلود فایل‌های {model_id}..."
