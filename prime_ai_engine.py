@@ -390,11 +390,10 @@ def build_prime_ai(_legacy_search_toggle=None):
                         verified_marker = checkpoint.with_suffix(checkpoint.suffix + ".sha256")
                         if not checkpoint.exists() or checkpoint.stat().st_size < 20_000_000_000:
                             partial = checkpoint.with_suffix(checkpoint.suffix + ".part")
-                            params = urllib.parse.urlencode({
-                                "type": "Model", "format": "SafeTensor",
-                                "size": "full", "fp": "fp32",
-                            })
-                            download_url = "https://civitai.com/api/download/models/691639?" + params
+                            # Use Civitai's canonical model-version download URL.
+                            # Extra format/size/fp filters can trigger HTTP 400 when
+                            # they do not match the published file metadata.
+                            download_url = "https://civitai.com/api/download/models/691639"
                             headers = {
                                 "User-Agent": "Prime-AI-Molab/1.0",
                                 "Authorization": "Bearer " + token,
